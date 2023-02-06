@@ -5,6 +5,12 @@ app = Flask(__name__)
 nodes = []
 jobs = []
 
+@app.route('/cloudproxy/nodes/all')
+def cloud_get_all_nodes():
+    if request.method == 'GET':
+        #TODO: loop through all nodes and add them to the json
+        pass
+
 @app.route('/cloudproxy/nodes/<name')
 def cloud_register(name):
     if request.method == 'GET':
