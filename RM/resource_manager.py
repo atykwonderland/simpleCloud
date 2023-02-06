@@ -1,97 +1,50 @@
-import docker
-import time
+from flask import Flask, jsonify, request
+import pycurl
+import json
+from io import BytesIO
 
-global client
-global nodes
-global jobs_queue
+cURL = pycurl.Curl()
+proxy_url = 'http://192.168.124.89:6000' #TODO: change this with our VM addresses
 
-class Pod:
-    def __init__(self, name, id) -> None:
-        self.name = name
-        self.id = id
-        pass
-    
-class Node:
-    def __init__(self, name, id) -> None:
-        self.name = name
-        self.status = "Idle"
-        self.id = id
-        pass
+app = Flask(__name__)
 
-class Job:
-    def __init__(self, path, status) -> None:
-        self.path = path
-        self.id = id(self.path)
-        self.status = status
-        pass
+@app.route('/', methods=['GET', 'POST'])
+def cloud():
+    if request.method == 'GET':
+        print('A client says hello')
+        response = 'Cloud says hello!'
+        return jsonify({'response': response})
 
-client = docker.from_env() # TODO: need to make this work on separate VM -- add host=url
+@app.route('/cloud/nodes/<name>', defaults={'pod_name': 'default'})
+@app.route('/cloud/nodes/<name>/<pod_name>') 
+def cloud_register(name, pod_name):
+    if request.method == 'GET':
+        print('Request to reigster new node: ' + str(name) + ' on pod: ' + str(pod_name))
+        #TODO: logic for invoing RM-proxy
+        data = BytesIO()
 
-def cloud_init(client):
-    try:
-        network = client.networks.get('container_network')
-    except docker.errors.NotFound:
-        network = client.networks.create('container_network', driver='bridge')
-        global default_pod
-        default_pod = Pod("container_network", network.id)
+        cURL.setopt(cURL.URL, proxy_url + '/cloudproxy/nodes/', + str(name))
+        cURL.setopt(cURL.WRITEFUNCTION, data.write)
+        cURL.perform()
+        dictionary = json.loads(data.getvalue())
+        print(dictionary)
 
-    print(client.api.inspect_network (network.id))
-    print('Manager waiting on containers to connect to the container_network bridge...')
-    while len (network.containers) == 0:
-        time.sleep (5)
-        network.reload()
+        result = dictionary['result']
+        node_status = dictionary['node_status']
+        new_node_name = dictionary['node_name']
+        new_node_pod = pod_name
 
-    container_list = []
-    while 1:
-        if not container_list == network.containers:
-            container_list = network.containers
-            for container in container_list:
-                print("Container connected: \n\tName:" + container.name + "\n\tStatus: " + container.status + "\n")
-                time.sleep(5)
-                network.reload()
+        return jsonify({'result': result, 'node_status': node_status, 'new_node_name': str(name), 'new_pod_name':str(pod_name)}) 
 
-def cloud_pod_register(client, POD_NAME):
-    """
-    Registers a new pod with the specified name to the main resource cluster. 
-    Check pod name is unique and not the current pod
-    """
-    print("Command unavailable due to lack of resources")
+@app.route('/cloud/jobs/launch', methods=['POST'])
+def cloud_launch():
+    if request.method == 'POST':
+        print('Request to post a file')
+        job_file = request.files['files']
+        #TODO: send job to appropriate proxy
+        print(job_file.read())
+        result = 'success'
+        return jsonify({'result': result})
 
-def cloud_pod_rm(POD_NAME):
-    """
-    Removes the specified pod. 
-    Command fails if there are nodes registered to this pod or if the specified pod is the default pod.
-    """
-    # check if pod exists
-    try:
-        pod = client.networks.get(POD_NAME)
-    except docker.errors.NotFound:
-        print(POD_NAME + " not found")
-        return
-    # check if pod is the default pod
-    if POD_NAME != default_pod.name:
-        print(POD_NAME + " cannot be removed. It is a default pod.")
-        return
-    # check if there are nodes registered to the pod
-    elif len(pod.containers.list()) != 0:
-        print(POD_NAME + " cannot be removed. There are nodes registered to this pod.")
-        return 
-    # remove the pod
-    else:
-        pod.remove()
-    return
-
-def cloud_rm(NODE_NAME):
-    """
-    Removes the specified node. 
-    Command fails if the name does not exist or if its status is not “Idle”
-    """
-    for node in client.containters.list():
-        if node.name is NODE_NAME:
-            if node.status is "Idle": #TODO: fix this once classes are created
-                node.remove()
-                return
-            else:
-                print(NODE_NAME + " cannot be removed. Status is not Idle.")
-                return
-    print(NODE_NAME + " cannot be removed. It does not exist.")
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
