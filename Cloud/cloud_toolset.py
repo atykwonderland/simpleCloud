@@ -33,10 +33,20 @@ def main():
         command = input('$ ')
         if command == 'cloud hello':
             cloud_hello(rm_url)
+        elif command == 'cloud init':
+            pass
+        elif command.startswith('cloud pod register'):
+            pass
+        elif command.startswith('cloud pod rm'):
+            pass
         elif command.startswith('cloud reigster'):
             cloud_register(rm_url, command)
+        elif command.startswith('cloud rm'):
+            pass
         elif command.startswith('cloud launch'):
             cloud_launch(rm_url, command)
+        elif command.startswith('cloud abort'):
+            pass
 
 if __name__ == '__main__':
     main()

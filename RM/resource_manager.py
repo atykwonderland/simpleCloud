@@ -8,16 +8,32 @@ proxy_url = 'http://192.168.124.89:6000' #TODO: change this with our VM addresse
 
 app = Flask(__name__)
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def cloud():
     if request.method == 'GET':
         print('A client says hello')
         response = 'Cloud says hello!'
         return jsonify({'response': response})
 
-@app.route('/cloud/nodes/<name>', defaults={'pod_name': 'default'})
-@app.route('/cloud/nodes/<name>/<pod_name>') 
-def cloud_register(name, pod_name):
+@app.route('/cloud/init', methods=['GET'])
+def cloud_init():
+    if request.method == 'GET':
+        pass
+
+@app.route('/cloud/pods/<name>', methods=['GET', 'DELETE'])
+def cloud_pod():
+    # register new pod with name
+    if request.method == 'GET':
+        pass
+    
+    # delete existing pod with name
+    elif request.method == 'DELETE':
+        pass
+
+@app.route('/cloud/nodes/<name>', defaults={'pod_name': 'default'}, methods=['GET', 'DELETE'])
+@app.route('/cloud/nodes/<name>/<pod_name>', methods=['GET']) 
+def cloud_node(name, pod_name):
+    # register node with name
     if request.method == 'GET':
         print('Request to reigster new node: ' + str(name) + ' on pod: ' + str(pod_name))
         #TODO: logic for invoing RM-proxy
@@ -33,8 +49,12 @@ def cloud_register(name, pod_name):
         node_status = dictionary['node_status']
         new_node_name = dictionary['node_name']
         new_node_pod = pod_name
-
+        
         return jsonify({'result': result, 'node_status': node_status, 'new_node_name': str(name), 'new_pod_name':str(pod_name)}) 
+    
+    # delete existing node with name
+    elif request.method == 'DELETE':
+        pass
 
 @app.route('/cloud/jobs/launch', methods=['POST'])
 def cloud_launch():
@@ -45,6 +65,12 @@ def cloud_launch():
         print(job_file.read())
         result = 'success'
         return jsonify({'result': result})
+
+@app.route('/cloud/jobs/abort/<job_id>', methods=['DELETE'])
+def cloud_abort():
+    if request.method == 'DELETE':
+        pass
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
