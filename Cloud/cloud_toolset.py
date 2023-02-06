@@ -27,6 +27,7 @@ def cloud_launch(url, command):
             ret = requests.post(url + '/cloud/jobs/launch', files=files)
             print(ret.text)
 
+#TODO: anything with pass needs a new method to replace it below
 def main():
     rm_url = sys.argv[1]
     while (1):

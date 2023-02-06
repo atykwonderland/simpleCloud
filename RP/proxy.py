@@ -5,6 +5,9 @@ app = Flask(__name__)
 nodes = []
 jobs = []
 
+# TODO: this file needs to contain all possible api calls that need docker commands 
+# includes: resource manager and resource monitor api calls
+
 @app.route('/cloudproxy/nodes/all')
 def cloud_get_all_nodes():
     if request.method == 'GET':

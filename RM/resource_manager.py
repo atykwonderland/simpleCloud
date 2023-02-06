@@ -15,6 +15,7 @@ def cloud():
         response = 'Cloud says hello!'
         return jsonify({'response': response})
 
+#TODO
 @app.route('/cloud/init', methods=['GET'])
 def cloud_init():
     if request.method == 'GET':
@@ -22,11 +23,11 @@ def cloud_init():
 
 @app.route('/cloud/pods/<name>', methods=['GET', 'DELETE'])
 def cloud_pod():
-    # register new pod with name
+    #TODO: register new pod with name
     if request.method == 'GET':
         pass
     
-    # delete existing pod with name
+    #TODO: delete existing pod with name
     elif request.method == 'DELETE':
         pass
 
@@ -52,7 +53,7 @@ def cloud_node(name, pod_name):
         
         return jsonify({'result': result, 'node_status': node_status, 'new_node_name': str(name), 'new_pod_name':str(pod_name)}) 
     
-    # delete existing node with name
+    #TODO: delete existing node with name
     elif request.method == 'DELETE':
         pass
 
@@ -66,6 +67,7 @@ def cloud_launch():
         result = 'success'
         return jsonify({'result': result})
 
+#TODO
 @app.route('/cloud/jobs/abort/<job_id>', methods=['DELETE'])
 def cloud_abort():
     if request.method == 'DELETE':
