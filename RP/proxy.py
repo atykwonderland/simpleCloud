@@ -28,33 +28,20 @@ class Job:
         self.status = status
         self.node_id = node_id
 
-# TODO: this file needs to contain all possible api calls that need docker commands 
+# this file contains all possible api calls that need docker commands 
 # includes: resource manager and resource monitor api calls
 
 #------------------------ALICE-------------------------
 
-# TODO: This won't ever return? not sure about this implementation (from tutorial though)
 @app.route('/cloudproxy/init')
 def cloud_init():
     try:
-        network = client.networks.get('default')
+        pod = client.networks.get('default')
+        result = str(pod.name) + ' was already created.'
     except docker.errors.NotFound:
-        network = client.networks.create('default', driver='bridge')
-
-    print(client.api.inspect_network(network.id))
-    print('Manager waiting on containers to connect to the default bridge...')
-    while len(network.containers) == 0:
-        time.sleep (5)
-        network.reload()
-
-    container_list = []
-    while 1:
-        if not container_list == network.containers:
-            container_list = network.containers
-            for container in container_list:
-                print("Container connected: \n\tName:" + container.name + "\n\tStatus: " + container.status + "\n")
-                time.sleep(5)
-                network.reload()
+        pod = client.networks.create('default', driver='bridge')
+        result = str(pod.name) + ' was newly created.'
+    return jsonify({'result': result})
 
 @app.route('/cloudproxy/pods/<name>', methods=['GET', 'DELETE'])
 def cloud_pod(name):
