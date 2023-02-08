@@ -107,10 +107,10 @@ def cloud_node_rm(name):
             result = str(name) + " not found"
         return jsonify({'result': result})
     
-@app.route('/cloud/job/<path>', methods=['LAUNCH'])
-def cloud_launch(path):
+@app.route('/cloud/jobs/launch', methods=['POST'])
+def cloud_launch(file):
     # Create Job instance and print id
-    job = Job(path, "Registered")
+    job = Job(file, "Registered")
     jobs.append(job)
     print(job.id)
     # Look for available node
@@ -137,18 +137,18 @@ def cloud_launch(path):
             except docker.errors.NotFound:
                 continue
     
-@app.route('/cloud/job/<id>', method=['ABORT'])    
-def cloud_abort (id):
+@app.route('/cloud/job/abort/<job_id>', methods=['DELETE'])    
+def cloud_abort(job_id):
     for job in jobs:
-        if job.id is id:
+        if job.id is job_id:
             # Job registered, remove job from queue
             if job.status is "Registered":
                 jobs.remove(job)
-                result = 'Job ' + str(id) + ' is aborted'
+                result = 'Job ' + str(job_id) + ' is aborted'
                 return jsonify({'result': result})
             # Job completed
             elif job.status is "Completed":
-                result = 'Job ' +str(id) + " cannot be aborted. It has been completed.")
+                result = 'Job ' +str(job_id) + " cannot be aborted. It has been completed.")
                 return jsonify({'result': result})
             # Job running
             elif job.status is "Running":
@@ -159,15 +159,15 @@ def cloud_abort (id):
                             container.stop()
                             node.status = "Idle"
                             job.status = "Aborted"
-                            result = 'Job ' + str(id) + 'is aborted'
+                            result = 'Job ' + str(job_id) + 'is aborted'
                             return jsonify({'result': result})
                         except docker.errors.NotFound:
-                            result = 'Container ' + str(node.name) + ' for job ' + str(id) + ' not found'
+                            result = 'Container ' + str(node.name) + ' for job ' + str(job_id) + ' not found'
                             return jsonify({'result': result})
-                result = 'Node ' + str(job.node_id) + ' for job' + str(id) + ' not found'
+                result = 'Node ' + str(job.node_id) + ' for job' + str(job_id) + ' not found'
                 return jsonify({'result': result})
     # Job not found in the queue
-    result = 'Job ' + str(id) + " not found.")
+    result = 'Job ' + str(job_id) + " not found.")
     return jsonify({'result': result})
 #-------------------------------------------------
 
