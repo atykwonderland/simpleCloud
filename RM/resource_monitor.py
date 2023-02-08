@@ -60,15 +60,16 @@ def cloudmonitor_get_job(node_id):
 def cloudmonitor_get_job_log(node_id, job_id):
     if request.method == 'GET':
         #TODO: get log for job_id
-        response = requests.get("/cloudproxy/logs/"+str(node_id)+"/"+str(job_id))
-        return jsonify(response)
+        log = cloudmonitor_get_node_log(node_id)
+        return log[job_id]
+
 
 
 @app.route('/cloudmonitor/nodes/log/<node_id>')
 def cloudmonitor_get_node_log(node_id):
     if request.method == 'GET':
         #TODO: get log for node_id
-        response = requests.get("/cloudproxy/logs/" + str(node_id))
+        response = requests.get("/cloudproxy/nodes/log/" + str(node_id))
         return jsonify(response)
 
 
