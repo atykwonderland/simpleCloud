@@ -16,6 +16,10 @@ class Pod:
     
 # node is container in docker
 class Node:
+    # list of dictionaires for output log
+    # {'job_id': id, 'output': output}
+    jobs_output = []
+
     def __init__(self, name, id) -> None:
         self.name = name
         self.status = "Idle"
@@ -24,7 +28,7 @@ class Node:
 class Job:
     def __init__(self, file, status, node_id) -> None:
         self.file = file
-        self.id = id(self.path)
+        self.id = id(self.file)
         self.status = status
         self.node_id = node_id
 
@@ -36,9 +40,11 @@ class Job:
 @app.route('/cloudproxy/init')
 def cloud_init():
     try:
+        # if default pod doesn't already exist
         pod = client.networks.get('default')
         result = str(pod.name) + ' was already created.'
     except docker.errors.NotFound:
+        # create default pod
         pod = client.networks.create('default', driver='bridge')
         result = str(pod.name) + ' was newly created.'
     return jsonify({'result': result})
@@ -63,6 +69,7 @@ def cloud_pod(name):
                 pod.remove()
                 result = str(name) + " has been removed successfully."
         except docker.errors.NotFound:
+            # pod doesn't exist - can't delete
             result = str(name) + " not found"
         return jsonify({'result': result})
 
@@ -77,11 +84,13 @@ def cloud_node(name, pod_name):
             result = 'unknown'
             node_status = 'unknown'
             for node in nodes:
+                # node already exists
                 if name == node.name:
                     node_status = node.status
                     print('Node already exists: ' + str(name) + ' with status ' + str(node_status))
                     result = 'node already exists'
                     break
+            # make new node
             if result == 'unknown' and node_status == 'unknown':
                 n = client.containers.run(image = "alpine", detach=True, network=pod.name)
                 nodes.append(Node(name, n.id))
@@ -90,6 +99,7 @@ def cloud_node(name, pod_name):
                 print('Successfully added a new node: ' + str(name))
             return jsonify({'result': result, 'node_status': node_status, 'node_name': str(name)})
         except docker.errors.NotFound:
+            # pod doesn't exist - can't create node
             result = str(pod_name) + " not found"
             return jsonify({'result': result, 'node_status': 'not created', 'node_name': str(name)})
         
@@ -113,6 +123,7 @@ def cloud_node_rm(name):
                         result = 'node ' + str(name) + ' status is not IDLE'
                         break           
         except docker.errors.NotFound:
+            # node doesn't exist - can't delete
             result = str(name) + " not found"
         return jsonify({'result': result})
 
