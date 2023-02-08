@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 import pycurl
 import json
 from io import BytesIO
+import requests
 
 cURL = pycurl.Curl()
 proxy_url = 'http://192.168.124.89:6000' #TODO: change this with our VM addresses
@@ -15,32 +16,52 @@ def cloud():
         response = 'Cloud says hello!'
         return jsonify({'response': response})
 
-#TODO
+#------------------------ALICE-------------------------
+
 @app.route('/cloud/init', methods=['GET'])
 def cloud_init():
     if request.method == 'GET':
-        pass
-
-@app.route('/cloud/pods/<name>', methods=['GET', 'DELETE'])
-def cloud_pod():
-    #TODO: register new pod with name
-    if request.method == 'GET':
-        pass
-    
-    #TODO: delete existing pod with name
-    elif request.method == 'DELETE':
-        pass
-
-@app.route('/cloud/nodes/<name>', defaults={'pod_name': 'default'}, methods=['GET', 'DELETE'])
-@app.route('/cloud/nodes/<name>/<pod_name>', methods=['GET']) 
-def cloud_node(name, pod_name):
-    # register node with name
-    if request.method == 'GET':
-        print('Request to reigster new node: ' + str(name) + ' on pod: ' + str(pod_name))
-        #TODO: logic for invoing RM-proxy
+        print('Request to initialize cloud')
         data = BytesIO()
 
-        cURL.setopt(cURL.URL, proxy_url + '/cloudproxy/nodes/', + str(name))
+        cURL.setopt(cURL.URL, proxy_url + '/cloudproxy/init')
+        cURL.setopt(cURL.WRITEFUNCTION, data.write)
+        cURL.perform()
+        dictionary = json.loads(data.getvalue())
+        print(dictionary)
+
+        result = dictionary['result']
+        return jsonify({'result': result}) 
+
+@app.route('/cloud/pods/<name>', methods=['GET', 'DELETE'])
+def cloud_pod(name):
+    if request.method == 'GET':
+        print('Request to register a new pod: ' + str(name))
+        data = BytesIO()
+
+        cURL.setopt(cURL.URL, proxy_url + '/cloudproxy/pods/' + str(name))
+        cURL.setopt(cURL.WRITEFUNCTION, data.write)
+        cURL.perform()
+        dictionary = json.loads(data.getvalue())
+        print(dictionary)
+
+        result = dictionary['result']
+        return jsonify({'result': result, 'pod_name':str(name)}) 
+    
+    elif request.method == 'DELETE':
+        print('Request to remove pod: ' + str(name))
+        ret = requests.delete(proxy_url + '/cloudproxy/pods/' + str(name))
+        print(ret.text)
+        return jsonify({'result': str(ret.result), 'pod_name':str(name)}) 
+
+@app.route('/cloud/nodes/<name>', defaults={'pod_name': 'default'}, methods=['GET'])
+@app.route('/cloud/nodes/<name>/<pod_name>', methods=['GET']) 
+def cloud_node(name, pod_name):
+    if request.method == 'GET':
+        print('Request to reigster new node: ' + str(name) + ' on pod: ' + str(pod_name))
+        data = BytesIO()
+
+        cURL.setopt(cURL.URL, proxy_url + '/cloudproxy/nodes/' + str(name))
         cURL.setopt(cURL.WRITEFUNCTION, data.write)
         cURL.perform()
         dictionary = json.loads(data.getvalue())
@@ -49,13 +70,19 @@ def cloud_node(name, pod_name):
         result = dictionary['result']
         node_status = dictionary['node_status']
         new_node_name = dictionary['node_name']
-        new_node_pod = pod_name
         
-        return jsonify({'result': result, 'node_status': node_status, 'new_node_name': str(name), 'new_pod_name':str(pod_name)}) 
-    
-    #TODO: delete existing node with name
-    elif request.method == 'DELETE':
-        pass
+        return jsonify({'result': result, 'node_status': node_status, 'new_node_name': new_node_name, 'pod_name':str(pod_name)}) 
+
+@app.route('/cloud/nodes/<name>', methods=['DELETE'])   
+def cloud_node_rm(name):
+    if request.method == 'DELETE':
+        print('Request to remove node: ' + str(name))
+        ret = requests.delete(proxy_url + '/cloudproxy/nodes/' + str(name))
+        print(ret.text)
+        return jsonify({'result': str(ret.result), 'node_name':str(name)}) 
+
+
+#------------------------HANA-------------------------
 
 @app.route('/cloud/jobs/launch', methods=['POST'])
 def cloud_launch():
@@ -73,6 +100,7 @@ def cloud_abort():
     if request.method == 'DELETE':
         pass
 
+#-------------------------------------------------
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
