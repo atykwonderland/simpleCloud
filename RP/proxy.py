@@ -129,7 +129,7 @@ def cloud_get_all_nodes(pod_id):
         return jsonify(network.containers.list(all=True))
 
 @app.route('/cloudproxy/jobs/all')
-def cloud_get_all_nodes():
+def cloud_get_all_jobs():
     # TODO: loop through all nodes and add them to the json
     if request.method == 'GET':
         return jsonify(jobs)
@@ -159,6 +159,16 @@ def cloud_get_all_pods_job_numbers():
         num_jobs.append(len(network.containers))
 
     return num_jobs
+
+@app.route('/cloudproxy/nodes/log/<node_id>')
+def get_node_log(node_id):
+    nodes = cloud_get_all_nodes()
+    for node in nodes:
+        if node.id == node_id:
+            return node.jobs_output
+
+
+
 
 
 
