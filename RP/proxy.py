@@ -133,14 +133,14 @@ def cloud_launch(file):
                         file_name = str(job.id) + ".txt"
                         logs_file = open(file_name, "a")
                     # Save the log file to node
-                    node.jobs_output.append(job.id, logs_file)
+                    node.jobs_output.append({'job_output':job.id, 'output':logs_file})
                     # Update status when done running
                     job.status = "Completed"
                     node.status = "Idle"
                     result = 'Job ' + str(job.id) + ' is completed'
                     return jsonify({'result': result})
-            except docker.errors.NotFound:
-                continue
+                except docker.errors.NotFound:
+                    continue
     
 @app.route('/cloud/job/abort/<job_id>', methods=['DELETE'])    
 def cloud_abort(job_id):
@@ -153,7 +153,7 @@ def cloud_abort(job_id):
                 return jsonify({'result': result})
             # Job completed
             elif job.status is "Completed":
-                result = 'Job ' +str(job_id) + " cannot be aborted. It has been completed.")
+                result = 'Job ' +str(job_id) + " cannot be aborted. It has been completed."
                 return jsonify({'result': result})
             # Job running
             elif job.status is "Running":
@@ -172,7 +172,7 @@ def cloud_abort(job_id):
                 result = 'Node ' + str(job.node_id) + ' for job' + str(job_id) + ' not found'
                 return jsonify({'result': result})
     # Job not found in the queue
-    result = 'Job ' + str(job_id) + " not found.")
+    result = 'Job ' + str(job_id) + " not found."
     return jsonify({'result': result})
 #-------------------------------------------------
 
