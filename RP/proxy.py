@@ -126,7 +126,9 @@ def cloud_node_rm(name):
             # node doesn't exist - can't delete
             result = str(name) + " not found"
         return jsonify({'result': result})
-    
+        
+#------------------------HANA-------------------------
+
 @app.route('/cloud/jobs/launch', methods=['POST'])
 def cloud_launch(file):
     # Create Job instance and print id
@@ -195,13 +197,52 @@ def cloud_abort(job_id):
     result = 'Job ' + str(job_id) + " not found."
     return jsonify({'result': result})
 
-#-------------------------------------------------
+# ------------------------JOSHUA-------------------------
 
 @app.route('/cloudproxy/nodes/all')
 def cloud_get_all_nodes():
+    # TODO: loop through all nodes and add them to the json
     if request.method == 'GET':
-        #TODO: loop through all nodes and add them to the json
-        pass
+
+        nodes_list = client.network.containers.list(all=True)
+        return jsonify(nodes_list)
+
+@app.route('/cloudproxy/nodes/<pod_id>')
+def cloud_get_all_nodes(pod_id):
+    if request.method == 'GET':
+        network = client.networks.get(pod_id)
+        return jsonify(network.containers.list(all=True))
+
+@app.route('/cloudproxy/jobs/all')
+def cloud_get_all_jobs():
+    # TODO: loop through all nodes and add them to the json
+    if request.method == 'GET':
+        return jsonify(jobs)
+
+@app.route('/cloudproxy/pods/all')
+def cloud_get_all_pods():
+    pods = client.networks.list()
+    response = requests.get('/cloud/pods/' + pods[0]).json()
+    for pod in pods[1:]:
+        response.update(requests.get('/cloud/pods/' + str(pod)).json())
+    return response
+
+@app.route('/cloudproxy/pods/job_numbers')
+def cloud_get_all_pods_job_numbers():
+    pods = client.networks.list()
+    num_jobs = []
+    for pod in pods:
+        network = client.networks.get(pod.name)
+        num_jobs.append(len(network.containers))
+
+    return num_jobs
+
+@app.route('/cloudproxy/nodes/log/<node_id>')
+def get_node_log(node_id):
+    nodes = cloud_get_all_nodes()
+    for node in nodes:
+        if node.id == node_id:
+            return node.jobs_output
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=6000)
