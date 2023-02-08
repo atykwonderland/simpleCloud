@@ -132,7 +132,8 @@ def cloud_launch(file):
                         # Append logs to a file
                         file_name = str(job.id) + ".txt"
                         logs_file = open(file_name, "a")
-                    # TODO: Save the log file to node
+                    # Save the log file to node
+                    node.jobs_output.append(job.id, logs_file)
                     # Update status when done running
                     job.status = "Completed"
                     node.status = "Idle"
