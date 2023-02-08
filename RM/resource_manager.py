@@ -5,7 +5,7 @@ from io import BytesIO
 import requests
 
 cURL = pycurl.Curl()
-proxy_url = 'http://192.168.124.89:6000' #TODO: change this with our VM addresses
+proxy_url = 'http://winter2023-comp598-group03-01.cs.mcgill.ca:6000' #TODO: change this with our VM address
 
 app = Flask(__name__)
 

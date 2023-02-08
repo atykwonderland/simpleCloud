@@ -8,11 +8,13 @@ client = docker.from_env()
 nodes = []
 jobs = []
 
+# pod is network in docker
 class Pod:
     def __init__(self, name, id) -> None:
         self.name = name
         self.id = id
     
+# node is container in docker
 class Node:
     def __init__(self, name, id) -> None:
         self.name = name
@@ -20,8 +22,8 @@ class Node:
         self.id = id
 
 class Job:
-    def __init__(self, path, status, node_id) -> None:
-        self.path = path
+    def __init__(self, file, status, node_id) -> None:
+        self.file = file
         self.id = id(self.path)
         self.status = status
         self.node_id = node_id
