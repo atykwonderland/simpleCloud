@@ -6,10 +6,11 @@ app = Flask(__name__)
 def cloudmonitor_get_all_pods():
     # TODO: loop through all pods and add them to the json
     if request.method == 'GET':
-        pods = client.networks.list()
-        response = requests.get('/cloud/pods/'+pods[0]).json()
-        for pod in pods[1:]:
-            response.update(requests.get('/cloud/pods/'+str(pod)).json())
+        response = requests.get('/cloudproxy/pods/all')
+        for pod in response:
+            print("pod name: "+pod.name)
+            print("pod id: " + pod.id)
+            print("number of jobs: "+requests.get('/cloudproxy/pods/job_numbers'))
         return response
 
 
@@ -17,7 +18,14 @@ def cloudmonitor_get_all_pods():
 def cloudmonitor_get_all_nodes():
     if request.method == 'GET':
         #TODO: loop through all nodes and add them to the json
-        return requests.get('cloudproxy/nodes/all')
+
+        nodes = requests.get('cloudproxy/nodes/all')
+        for node in nodes:
+            print("name: "+node.name)
+            print("id: " + node.id)
+            print("status: " + node.status)
+
+        return nodes
 
 
 @app.route('/cloudmonitor/jobs/all')
@@ -38,8 +46,14 @@ def cloudmonitor_get_all_jobs():
 def cloudmonitor_get_job(node_id):
     if request.method == 'GET':
         #TODO: loop through all nodes and add them to the json
-        response = requests.get('/cloudproxy/jobs/<node_id>')
-        return response
+
+        job = requests.get('/cloudproxy/jobs/'+str(node_id))
+
+        print("job path: " + job.path)
+        print("job ID: " + job.id)
+        print("job status: " + job.status)
+
+        return job
 
 
 @app.route('/cloudmonitor/jobs/log/<job_id>')
@@ -62,18 +76,3 @@ if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=7000)
 
 
-# # in the cloud proxy:
-# @app.route('/cloudproxy/jobs/all')
-# def proxy_get_all_jobs():
-#     if request.method == 'GET':
-#         return jobs             # a list of jobs (global variable in the proxy)
-#
-# @app.route('/cloudproxy/logs/<node_id>')
-# def proxy_get_log_node(node_id):
-#     if request.method == 'GET':
-#         return logs[node_id]             # a list of logs (global variable in the proxy)
-#
-# @app.route('/cloudproxy/logs/<node_id>/<job_id>')
-# def proxy_get_log_job(node_id, job_id):
-#     if request.method == 'GET':
-#         return logs[node_id][job_id]             # a list of logs (global variable in the proxy)
