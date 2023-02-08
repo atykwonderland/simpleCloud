@@ -111,22 +111,22 @@ def cloud_node_rm(name):
             result = str(name) + " not found"
         return jsonify({'result': result})
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=6000)
-    
+
 # ------------------------JOSHUA-------------------------
 
 @app.route('/cloudproxy/nodes/all')
 def cloud_get_all_nodes():
     # TODO: loop through all nodes and add them to the json
     if request.method == 'GET':
+
         nodes_list = client.network.containers.list(all=True)
         return jsonify(nodes_list)
 
-@app.route('/cloudproxy/nodes/<node_id>')
-def cloud_get_all_nodes(node_id):
+@app.route('/cloudproxy/nodes/<pod_id>')
+def cloud_get_all_nodes(pod_id):
     if request.method == 'GET':
-        return jsonify(client.network.containers.get(node_id))
+        network = client.networks.get(pod_id)
+        return jsonify(network.containers.list(all=True))
 
 @app.route('/cloudproxy/jobs/all')
 def cloud_get_all_nodes():
@@ -134,13 +134,33 @@ def cloud_get_all_nodes():
     if request.method == 'GET':
         return jsonify(jobs)
 
-@app.route('/cloudproxy/jobs/<job_id>')
-def cloud_get_all_nodes(job_id):
-    # TODO: loop through all nodes and add them to the json
-    if request.method == 'GET':
-        for job in jobs:
-            if job.id == job_id:
-                return jsonify(job)
+# @app.route('/cloudproxy/jobs/<node_id>')
+# def cloud_get_all_nodes(node_id):
+#     # TODO: loop through all nodes and add them to the json
+#     if request.method == 'GET':
+#         for job in jobs:
+#             if job.id == job_id:
+#                 return jsonify(job)
+
+@app.route('/cloudproxy/pods/all')
+def cloud_get_all_pods():
+    pods = client.networks.list()
+    response = requests.get('/cloud/pods/' + pods[0]).json()
+    for pod in pods[1:]:
+        response.update(requests.get('/cloud/pods/' + str(pod)).json())
+    return response
+
+@app.route('/cloudproxy/pods/job_numbers')
+def cloud_get_all_pods_job_numbers():
+    pods = client.networks.list()
+    num_jobs = []
+    for pod in pods:
+        network = client.networks.get(pod.name)
+        num_jobs.append(len(network.containers))
+
+    return num_jobs
 
 
 
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=6000)
