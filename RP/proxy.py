@@ -125,8 +125,10 @@ def cloud_launch(file):
                     # Assgin job to the node
                     job.node_id = node.id
                     # Run the job
-                    container.exec_run(path)
-                    container.wait()
+                    commands = file.readlines()
+                    for command in commands:
+                        container.exec_run(command)
+                        container.wait()
                     # TODO: Append logs to a file in the node
                     container.logs()
                     # Update status when done running
