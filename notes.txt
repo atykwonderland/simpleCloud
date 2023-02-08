@@ -4,7 +4,7 @@ https://docs.docker.com/engine/api/sdk/examples/
 Toolset Servers:
 RP: winter2023-comp598-group03-01.cs.mcgill.ca
 RM: winter2023-comp598-group03-02.cs.mcgill.ca
-Cloud: winter2023-comp598-group03-03.cs.mcgill.ca
+Client: winter2023-comp598-group03-03.cs.mcgill.ca
 
 To Access the Servers:
 ssh -i cs598-group03-key comp598-user@winter2023-comp598-group03-01.cs.mcgill.ca
