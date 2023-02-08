@@ -61,7 +61,7 @@ def cloudmonitor_get_job_log(node_id, job_id):
     if request.method == 'GET':
         #TODO: get log for job_id
         log = cloudmonitor_get_node_log(node_id)
-        return log[job_id]
+        return jsonify(log[job_id])
 
 
 
