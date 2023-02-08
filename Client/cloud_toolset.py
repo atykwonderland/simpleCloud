@@ -57,9 +57,20 @@ def cloud_launch(url, command):
     if len(command_list) == 3:
         file_path = command[2]
         if (os.path.isfile(file_path)):
-            files = {'files': open(file_path, 'rb')}
-            ret = requests.post(url + '/cloud/jobs/launch', files=files)
+            ret = requests.launch(url + '/cloud/jobs/' + file_path)
             print(ret.text)
+        else:
+            print('Error: not a file')
+    else:
+        print('Error: incorrect number of arguments')
+        
+def cloub_abort(url, command):
+    command_list = command.split()
+    if len(command_list) == 3:
+        ret = request.abort(url + '/cloud/job/' + command_list[2])
+        print(ret.text)
+    else:
+        print('Error: incorrect number of arguments')
 
 #-------------------------------------------------
 
