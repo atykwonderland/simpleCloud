@@ -106,7 +106,69 @@ def cloud_node_rm(name):
         except docker.errors.NotFound:
             result = str(name) + " not found"
         return jsonify({'result': result})
-
+    
+@app.route('/cloud/job/<path>', methods=['LAUNCH'])
+def cloud_launch(path):
+    # Create Job instance and print id
+    job = Job(path, "Registered")
+    jobs.append(job)
+    print(job.id)
+    # Look for available node
+    while 1:
+        for node in nodes:
+            if node.status is "Idle":
+                try:
+                    container = client.containers.get(node.name)
+                    # Set node & job status as "Running"
+                    job.status = "Running"
+                    node.status = "Running"
+                    # Assgin job to the node
+                    job.node_id = node.id
+                    # Run the job
+                    container.exec_run(path)
+                    container.wait()
+                    # TODO: Append logs to a file in the node
+                    container.logs()
+                    # Update status when done running
+                    job.status = "Completed"
+                    node.status = "Idle"
+                    result = 'Job ' + str(job.id) + ' is completed'
+                    return jsonify({'result': result})
+            except docker.errors.NotFound:
+                continue
+    
+@app.route('/cloud/job/<id>', method=['ABORT'])    
+def cloud_abort (id):
+    for job in jobs:
+        if job.id is id:
+            # Job registered, remove job from queue
+            if job.status is "Registered":
+                jobs.remove(job)
+                result = 'Job ' + str(id) + ' is aborted'
+                return jsonify({'result': result})
+            # Job completed
+            elif job.status is "Completed":
+                result = 'Job ' +str(id) + " cannot be aborted. It has been completed.")
+                return jsonify({'result': result})
+            # Job running
+            elif job.status is "Running":
+                for node in nodes:
+                    if node.id is job.node_id:
+                        try:
+                            container = client.containers.get(node.name)
+                            container.stop()
+                            node.status = "Idle"
+                            job.status = "Aborted"
+                            result = 'Job ' + str(id) + 'is aborted'
+                            return jsonify({'result': result})
+                        except docker.errors.NotFound:
+                            result = 'Container ' + str(node.name) + ' for job ' + str(id) + ' not found'
+                            return jsonify({'result': result})
+                result = 'Node ' + str(job.node_id) + ' for job' + str(id) + ' not found'
+                return jsonify({'result': result})
+    # Job not found in the queue
+    result = 'Job ' + str(id) + " not found.")
+    return jsonify({'result': result})
 #-------------------------------------------------
 
 @app.route('/cloudproxy/nodes/all')
