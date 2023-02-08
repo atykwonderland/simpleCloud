@@ -8,10 +8,11 @@ client = docker.from_env()
 nodes = []
 jobs = []
 
-# TODO: this file needs to contain all possible api calls that need docker commands 
+
+# TODO: this file needs to contain all possible api calls that need docker commands
 # includes: resource manager and resource monitor api calls
 
-#------------------------ALICE-------------------------
+# ------------------------ALICE-------------------------
 
 # TODO: This won't ever return? not sure about this implementation (from tutorial though)
 @app.route('/cloudproxy/init')
@@ -24,7 +25,7 @@ def cloud_init():
     print(client.api.inspect_network(network.id))
     print('Manager waiting on containers to connect to the default bridge...')
     while len(network.containers) == 0:
-        time.sleep (5)
+        time.sleep(5)
         network.reload()
 
     container_list = []
@@ -35,6 +36,7 @@ def cloud_init():
                 print("Container connected: \n\tName:" + container.name + "\n\tStatus: " + container.status + "\n")
                 time.sleep(5)
                 network.reload()
+
 
 @app.route('/cloudproxy/pods/<name>', methods=['GET', 'DELETE'])
 def cloud_pod(name):
@@ -59,22 +61,23 @@ def cloud_pod(name):
             result = str(name) + " not found"
         return jsonify({'result': result})
 
+
 @app.route('/cloudproxy/nodes/<name>', defaults={'pod_name': 'default'}, methods=['GET'])
-@app.route('/cloudproxy/nodes/<name>/<pod_name>', methods=['GET']) 
+@app.route('/cloudproxy/nodes/<name>/<pod_name>', methods=['GET'])
 def cloud_node(name, pod_name):
     if request.method == 'GET':
         print('Request to register new node: ' + str(name) + ' in pod ' + str(pod_name))
         try:
             # check if pod exists
             pod = client.networks.get(pod_name)
-            #TODO: need a better way of keeping track of all nodes status (from monitoring i think)
+            # TODO: need a better way of keeping track of all nodes status (from monitoring i think)
             result = 'unknown'
             node_status = 'unknown'
             for node in nodes:
                 if name == node['name']:
                     print('Node already exists: ' + node['name'] + ' with status ' + node['status'])
             if result == 'unknown' and node_status == 'unknown':
-                n = client.containers.run(image = "alpine", detach=True, network=pod.name)
+                n = client.containers.run(image="alpine", detach=True, network=pod.name)
                 result = 'node_added'
                 nodes.append({'name': name, 'status': 'IDLE'})
                 node_status = 'IDLE'
@@ -83,8 +86,9 @@ def cloud_node(name, pod_name):
         except docker.errors.NotFound:
             result = str(pod_name) + " not found"
         return jsonify({'result': result})
-        
-@app.route('/cloud/nodes/<name>', methods=['DELETE'])   
+
+
+@app.route('/cloud/nodes/<name>', methods=['DELETE'])
 def cloud_node_rm(name):
     if request.method == 'GET':
         try:
@@ -94,7 +98,7 @@ def cloud_node_rm(name):
                 if name == node['name']:
                     # remove if status is idle
                     if node['status'] == 'IDLE':
-                        node_to_remove.remove() 
+                        node_to_remove.remove()
                         result = 'successfully removed node: ' + str(name)
                         # remove the node from local list of nodes
                         del nodes[i]
@@ -102,18 +106,41 @@ def cloud_node_rm(name):
                     # reject if not idle
                     else:
                         result = 'node ' + str(name) + ' status is not IDLE'
-                        break           
+                        break
         except docker.errors.NotFound:
             result = str(name) + " not found"
         return jsonify({'result': result})
 
-#-------------------------------------------------
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=6000)
+    
+# ------------------------JOSHUA-------------------------
 
 @app.route('/cloudproxy/nodes/all')
 def cloud_get_all_nodes():
+    # TODO: loop through all nodes and add them to the json
     if request.method == 'GET':
-        #TODO: loop through all nodes and add them to the json
-        pass
+        nodes_list = client.network.containers.list(all=True)
+        return jsonify(nodes_list)
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=6000)
+@app.route('/cloudproxy/nodes/<node_id>')
+def cloud_get_all_nodes(node_id):
+    if request.method == 'GET':
+        return jsonify(client.network.containers.get(node_id))
+
+@app.route('/cloudproxy/jobs/all')
+def cloud_get_all_nodes():
+    # TODO: loop through all nodes and add them to the json
+    if request.method == 'GET':
+        return jsonify(jobs)
+
+@app.route('/cloudproxy/jobs/<job_id>')
+def cloud_get_all_nodes(job_id):
+    # TODO: loop through all nodes and add them to the json
+    if request.method == 'GET':
+        for job in jobs:
+            if job.id == job_id:
+                return jsonify(job)
+
+
+
