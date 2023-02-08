@@ -8,6 +8,24 @@ client = docker.from_env()
 nodes = []
 jobs = []
 
+class Pod:
+    def __init__(self, name, id) -> None:
+        self.name = name
+        self.id = id
+    
+class Node:
+    def __init__(self, name, id) -> None:
+        self.name = name
+        self.status = "Idle"
+        self.id = id
+
+class Job:
+    def __init__(self, path, status, node_id) -> None:
+        self.path = path
+        self.id = id(self.path)
+        self.status = status
+        self.node_id = node_id
+
 # TODO: this file needs to contain all possible api calls that need docker commands 
 # includes: resource manager and resource monitor api calls
 
@@ -67,36 +85,38 @@ def cloud_node(name, pod_name):
         try:
             # check if pod exists
             pod = client.networks.get(pod_name)
-            #TODO: need a better way of keeping track of all nodes status (from monitoring i think)
             result = 'unknown'
             node_status = 'unknown'
             for node in nodes:
-                if name == node['name']:
-                    print('Node already exists: ' + node['name'] + ' with status ' + node['status'])
+                if name == node.name:
+                    node_status = node.status
+                    print('Node already exists: ' + str(name) + ' with status ' + str(node_status))
+                    result = 'node already exists'
+                    break
             if result == 'unknown' and node_status == 'unknown':
                 n = client.containers.run(image = "alpine", detach=True, network=pod.name)
+                nodes.append(Node(name, n.id))
                 result = 'node_added'
-                nodes.append({'name': name, 'status': 'IDLE'})
                 node_status = 'IDLE'
                 print('Successfully added a new node: ' + str(name))
-            return jsonify({'result': result, 'node_status': node_status, 'node_name': name})
+            return jsonify({'result': result, 'node_status': node_status, 'node_name': str(name)})
         except docker.errors.NotFound:
             result = str(pod_name) + " not found"
-        return jsonify({'result': result})
+            return jsonify({'result': result, 'node_status': 'not created', 'node_name': str(name)})
         
-@app.route('/cloud/nodes/<name>', methods=['DELETE'])   
+@app.route('/cloudproxy/nodes/<name>', methods=['DELETE'])   
 def cloud_node_rm(name):
     if request.method == 'GET':
         try:
             # if node exists
             node_to_remove = client.containers.get(name)
             for i, node in nodes:
-                if name == node['name']:
+                if name == node.name:
                     # remove if status is idle
-                    if node['status'] == 'IDLE':
+                    if node.status == 'IDLE':
                         node_to_remove.remove() 
                         result = 'successfully removed node: ' + str(name)
-                        # remove the node from local list of nodes
+                        # remove the node from list of nodes as well
                         del nodes[i]
                         break
                     # reject if not idle
