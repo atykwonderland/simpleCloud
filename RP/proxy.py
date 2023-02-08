@@ -126,6 +126,74 @@ def cloud_node_rm(name):
             # node doesn't exist - can't delete
             result = str(name) + " not found"
         return jsonify({'result': result})
+    
+@app.route('/cloud/jobs/launch', methods=['POST'])
+def cloud_launch(file):
+    # Create Job instance and print id
+    job = Job(file, "Registered")
+    jobs.append(job)
+    print(job.id)
+    # Look for available node
+    while 1:
+        for node in nodes:
+            if node.status is "Idle":
+                try:
+                    container = client.containers.get(node.name)
+                    # Set node & job status as "Running"
+                    job.status = "Running"
+                    node.status = "Running"
+                    # Assgin job to the node
+                    job.node_id = node.id
+                    # Run the job
+                    commands = file.readlines()
+                    for command in commands:
+                        (exec_code, output) = container.exec_run(command)
+                        container.wait()
+                        # Append logs to a file
+                        file_name = str(job.id) + ".txt"
+                        logs_file = open(file_name, "a")
+                    # Save the log file to node
+                    node.jobs_output.append({'job_output':job.id, 'output':logs_file})
+                    # Update status when done running
+                    job.status = "Completed"
+                    node.status = "Idle"
+                    result = 'Job ' + str(job.id) + ' is completed'
+                    return jsonify({'result': result})
+                except docker.errors.NotFound:
+                    continue
+    
+@app.route('/cloud/job/abort/<job_id>', methods=['DELETE'])    
+def cloud_abort(job_id):
+    for job in jobs:
+        if job.id is job_id:
+            # Job registered, remove job from queue
+            if job.status is "Registered":
+                jobs.remove(job)
+                result = 'Job ' + str(job_id) + ' is aborted'
+                return jsonify({'result': result})
+            # Job completed
+            elif job.status is "Completed":
+                result = 'Job ' +str(job_id) + " cannot be aborted. It has been completed."
+                return jsonify({'result': result})
+            # Job running
+            elif job.status is "Running":
+                for node in nodes:
+                    if node.id is job.node_id:
+                        try:
+                            container = client.containers.get(node.name)
+                            container.stop()
+                            node.status = "Idle"
+                            job.status = "Aborted"
+                            result = 'Job ' + str(job_id) + 'is aborted'
+                            return jsonify({'result': result})
+                        except docker.errors.NotFound:
+                            result = 'Container ' + str(node.name) + ' for job ' + str(job_id) + ' not found'
+                            return jsonify({'result': result})
+                result = 'Node ' + str(job.node_id) + ' for job' + str(job_id) + ' not found'
+                return jsonify({'result': result})
+    # Job not found in the queue
+    result = 'Job ' + str(job_id) + " not found."
+    return jsonify({'result': result})
 
 #-------------------------------------------------
 
