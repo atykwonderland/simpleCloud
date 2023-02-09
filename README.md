@@ -17,7 +17,9 @@ Supported Commands:
 | cloud launch       | PATH_TO_JOB        | Launches a specified job. <br>The job here may be a simple shell script that continuously prints out some text <br>to stdout and then waits for a few seconds.                                                                                                                   |
 | cloud abort        | JOB_ID             | Aborts the specified job. <br>The command fails if the job does not exist or if it has completed. <br>If the job is registered, it is removed from the waiting queue in the manager. <br>If the job is running, it is assigned to abort and the corresponding node becomes IDLE. |
 
-To run the scripts on each server:
+To run the scripts on each server (to be set up as daemons later for RP + RM):
 RP: python3 proxy.py
 RM: python3 resource_manager.py
 Cloud-Client: python3 cloud_toolset.py http://winter2023-comp598-group03-03.cs.mcgill.ca:5000
+
+for resource monitor testing, CURL each endpoint (check tutorial for how to)

@@ -54,7 +54,7 @@ def cloud_pod(name):
         print(ret.text)
         return jsonify({'result': str(ret.result), 'pod_name':str(name)}) 
 
-@app.route('/cloud/nodes/<name>', defaults={'pod_name': 'default'}, methods=['GET'])
+@app.route('/cloud/nodes/<name>', defaults={'pod_name': 'default_pod'}, methods=['GET'])
 @app.route('/cloud/nodes/<name>/<pod_name>', methods=['GET']) 
 def cloud_node(name, pod_name):
     if request.method == 'GET':

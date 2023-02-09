@@ -41,11 +41,11 @@ class Job:
 def cloud_init():
     try:
         # if default pod doesn't already exist
-        pod = client.networks.get('default')
+        pod = client.networks.get('default_pod')
         result = str(pod.name) + ' was already created.'
     except docker.errors.NotFound:
         # create default pod
-        pod = client.networks.create('default', driver='bridge')
+        pod = client.networks.create('default_pod', driver='bridge')
         result = str(pod.name) + ' was newly created.'
     return jsonify({'result': result})
 
@@ -59,7 +59,7 @@ def cloud_pod(name):
         try:
             pod = client.networks.get(name)
             # check if pod is the default pod
-            if name == 'default':
+            if name == 'default_pod':
                 result = str(name) + " cannot be removed. It is the default pod."
             # check if there are nodes registered to the pod
             elif len(pod.containers.list()) != 0:
@@ -73,7 +73,7 @@ def cloud_pod(name):
             result = str(name) + " not found"
         return jsonify({'result': result})
 
-@app.route('/cloudproxy/nodes/<name>', defaults={'pod_name': 'default'}, methods=['GET'])
+@app.route('/cloudproxy/nodes/<name>', defaults={'pod_name': 'default_pod'}, methods=['GET'])
 @app.route('/cloudproxy/nodes/<name>/<pod_name>', methods=['GET']) 
 def cloud_node(name, pod_name):
     if request.method == 'GET':
