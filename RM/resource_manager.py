@@ -5,7 +5,7 @@ from io import BytesIO
 import requests
 
 cURL = pycurl.Curl()
-proxy_url = 'http://winter2023-comp598-group03-01.cs.mcgill.ca:6000' #TODO: change this with our VM address
+proxy_url = 'http://winter2023-comp598-group03-01.cs.mcgill.ca:6000'
 
 app = Flask(__name__)
 
@@ -33,7 +33,7 @@ def cloud_init():
         result = dictionary['result']
         return jsonify({'result': result}) 
 
-@app.route('/cloud/pods/<name>', methods=['GET', 'DELETE'])
+@app.route('/cloud/pods/<name>', methods=['GET'])
 def cloud_pod(name):
     if request.method == 'GET':
         print('Request to register a new pod: ' + str(name))
@@ -47,12 +47,21 @@ def cloud_pod(name):
 
         result = dictionary['result']
         return jsonify({'result': result, 'pod_name':str(name)}) 
-    
-    elif request.method == 'DELETE':
+
+@app.route('/cloud/pods/rm/<name>', methods=['GET'])
+def cloud_pod_rm(name):
+    if request.method == 'GET':
         print('Request to remove pod: ' + str(name))
-        ret = requests.delete(proxy_url + '/cloudproxy/pods/' + str(name))
-        print(ret.text)
-        return jsonify({'result': str(ret.result), 'pod_name':str(name)}) 
+        data = BytesIO()
+
+        cURL.setopt(cURL.URL, proxy_url + '/cloudproxy/pods/rm/' + str(name))
+        cURL.setopt(cURL.WRITEFUNCTION, data.write)
+        cURL.perform()
+        dictionary = json.loads(data.getvalue())
+        print(dictionary)
+
+        result = dictionary['result']
+        return jsonify({'result': result, 'pod_name':str(name)}) 
 
 @app.route('/cloud/nodes/<name>', defaults={'pod_name': 'default_pod'}, methods=['GET'])
 @app.route('/cloud/nodes/<name>/<pod_name>', methods=['GET']) 
@@ -73,13 +82,20 @@ def cloud_node(name, pod_name):
         
         return jsonify({'result': result, 'node_status': node_status, 'new_node_name': new_node_name, 'pod_name':str(pod_name)}) 
 
-@app.route('/cloud/nodes/<name>', methods=['DELETE'])   
+@app.route('/cloud/nodes/rm/<name>', methods=['GET'])   
 def cloud_node_rm(name):
-    if request.method == 'DELETE':
+    if request.method == 'GET':
         print('Request to remove node: ' + str(name))
-        ret = requests.delete(proxy_url + '/cloudproxy/nodes/' + str(name))
-        print(ret.text)
-        return jsonify({'result': str(ret.result), 'node_name':str(name)}) 
+        data = BytesIO()
+
+        cURL.setopt(cURL.URL, proxy_url + '/cloudproxy/nodes/rm/' + str(name))
+        cURL.setopt(cURL.WRITEFUNCTION, data.write)
+        cURL.perform()
+        dictionary = json.loads(data.getvalue())
+        print(dictionary)
+
+        result = dictionary['result']
+        return jsonify({'result': str(result), 'node_name':str(name)}) 
 
 
 #------------------------HANA-------------------------

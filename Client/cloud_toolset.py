@@ -26,8 +26,8 @@ def cloud_pod_register(url, command):
 def cloud_pod_rm(url, command):
     command_list = command.split()
     if len(command_list) == 4:
-        ret = requests.delete(url + '/cloud/pods/' + command_list[3])
-        print(ret.text)
+        cURL.setopt(cURL.URL, url + '/cloud/pods/rm/' + command_list[3])
+        cURL.perform()
     else:
         print('Error: incorrect number of arguments')
 
@@ -45,8 +45,8 @@ def cloud_register(url, command):
 def cloud_rm(url, command):
     command_list = command.split()
     if len(command_list) == 3:
-        ret = requests.delete(url + '/cloud/nodes/' + command_list[2])
-        print(ret.text)
+        cURL.setopt(cURL.URL, url + '/cloud/nodes/rm/' + command_list[2])
+        cURL.perform()
     else:
         print('Error: incorrect number of arguments')
 
@@ -76,7 +76,7 @@ def main():
             cloud_pod_register(rm_url, command)
         elif command.startswith('cloud pod rm'):
             cloud_pod_rm(rm_url, command)
-        elif command.startswith('cloud reigster'):
+        elif command.startswith('cloud register'):
             cloud_register(rm_url, command)
         elif command.startswith('cloud rm'):
             cloud_rm(rm_url, command)

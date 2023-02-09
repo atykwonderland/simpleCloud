@@ -39,6 +39,7 @@ class Job:
 
 @app.route('/cloudproxy/init')
 def cloud_init():
+    print('Request to initialize cloud')
     try:
         # if default pod doesn't already exist
         pod = client.networks.get('default_pod')
@@ -49,12 +50,17 @@ def cloud_init():
         result = str(pod.name) + ' was newly created.'
     return jsonify({'result': result})
 
-@app.route('/cloudproxy/pods/<name>', methods=['GET', 'DELETE'])
+@app.route('/cloudproxy/pods/<name>', methods=['GET'])
 def cloud_pod(name):
     if request.method == 'GET':
+        print('Request to register new pod: ' + str(name))
         result = 'command unavailable due to lack of resources'
         return jsonify({'result': result})
-    elif request.method == 'DELETE':
+
+@app.route('/cloudproxy/pods/rm/<name>', methods=['GET'])
+def cloud_pod_rm(name):
+    if request.method == 'GET':
+        print('Request to remove pod: ' + str(name))
         # check if pod exists
         try:
             pod = client.networks.get(name)
@@ -89,13 +95,14 @@ def cloud_node(name, pod_name):
                     node_status = node.status
                     print('Node already exists: ' + str(name) + ' with status ' + str(node_status))
                     result = 'node already exists'
-                    break
+                    return jsonify({'result': result, 'node_status': node_status, 'node_name': str(name)})
             # make new node
             if result == 'unknown' and node_status == 'unknown':
-                n = client.containers.run(image = "alpine", detach=True, network=pod.name)
+                n = client.containers.create(image = "alpine", detach=True, name=str(name), network=pod.name)
                 nodes.append(Node(name, n.id))
+                print(nodes)
                 result = 'node_added'
-                node_status = 'IDLE'
+                node_status = 'Idle'
                 print('Successfully added a new node: ' + str(name))
             return jsonify({'result': result, 'node_status': node_status, 'node_name': str(name)})
         except docker.errors.NotFound:
@@ -103,29 +110,34 @@ def cloud_node(name, pod_name):
             result = str(pod_name) + " not found"
             return jsonify({'result': result, 'node_status': 'not created', 'node_name': str(name)})
         
-@app.route('/cloudproxy/nodes/<name>', methods=['DELETE'])   
+@app.route('/cloudproxy/nodes/rm/<name>', methods=['GET'])   
 def cloud_node_rm(name):
     if request.method == 'GET':
+        print('Request to remove node: ' + str(name))
         try:
             # if node exists
             node_to_remove = client.containers.get(name)
-            for i, node in nodes:
-                if name == node.name:
+            for i in range(len(nodes)):
+                if name == nodes[i].name:
                     # remove if status is idle
-                    if node.status == 'IDLE':
+                    if nodes[i].status == 'Idle':
+                        print('reached')
                         node_to_remove.remove() 
                         result = 'successfully removed node: ' + str(name)
                         # remove the node from list of nodes as well
                         del nodes[i]
-                        break
+                        return jsonify({'result': result})
                     # reject if not idle
                     else:
-                        result = 'node ' + str(name) + ' status is not IDLE'
-                        break           
+                        result = 'node ' + str(name) + ' status is not Idle'
+                        return jsonify({'result': result})
+                else:
+                    result = 'node ' + str(name) + ' not found'
+                    return jsonify({'result': result})
         except docker.errors.NotFound:
             # node doesn't exist - can't delete
-            result = str(name) + " not found"
-        return jsonify({'result': result})
+            result = str(name) + ' not found'
+            return jsonify({'result': result})
         
 #------------------------HANA-------------------------
 
@@ -138,7 +150,7 @@ def cloud_launch(file):
     # Look for available node
     while 1:
         for node in nodes:
-            if node.status is "Idle":
+            if node.status == "Idle":
                 try:
                     container = client.containers.get(node.name)
                     # Set node & job status as "Running"
@@ -169,16 +181,16 @@ def cloud_abort(job_id):
     for job in jobs:
         if job.id is job_id:
             # Job registered, remove job from queue
-            if job.status is "Registered":
+            if job.status == "Registered":
                 jobs.remove(job)
                 result = 'Job ' + str(job_id) + ' is aborted'
                 return jsonify({'result': result})
             # Job completed
-            elif job.status is "Completed":
+            elif job.status == "Completed":
                 result = 'Job ' +str(job_id) + " cannot be aborted. It has been completed."
                 return jsonify({'result': result})
             # Job running
-            elif job.status is "Running":
+            elif job.status == "Running":
                 for node in nodes:
                     if node.id is job.node_id:
                         try:
@@ -208,7 +220,7 @@ def cloud_get_all_nodes():
         return jsonify(nodes_list)
 
 @app.route('/cloudproxy/nodes/<pod_id>')
-def cloud_get_all_nodes(pod_id):
+def cloud_get_pod_nodes(pod_id):
     if request.method == 'GET':
         network = client.networks.get(pod_id)
         return jsonify(network.containers.list(all=True))
