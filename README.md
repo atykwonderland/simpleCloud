@@ -4,7 +4,7 @@ Alice Kang 260827823
 
 Hana Zhang ?
 
-Joshua Roccamo ?
+Joshua Roccamo 260669999
 
 ---
 
@@ -18,6 +18,11 @@ To run the scripts on each server (to be set up as daemons later for RP + RM):
 For resource monitor testing, CURL each endpoint after running (check tutorial for how to):
 - RP: `python3 proxy.py`
 - RM: `python3 resource_monitor.py`
+
+The web server for monitoring was setup using:
+- RM: `python3 monitoring_web_server.py`
+It can be accessed at:
+http://winter2023-comp598-group03-02.cs.mcgill.ca:80
 
 ---
 
