@@ -7,8 +7,10 @@ client = docker.from_env()
 
 nodes = []
 jobs = []
+job_queue = []
 
 # pod is network in docker
+# not used yet since no resource clusters
 class Pod:
     def __init__(self, name, id) -> None:
         self.name = name
@@ -26,16 +28,17 @@ class Node:
         self.id = id
 
 class Job:
-    def __init__(self, file, status, node_id) -> None:
+    node_id = ""
+
+    def __init__(self, file, status) -> None:
         self.file = file
         self.id = id(self.file)
         self.status = status
-        self.node_id = node_id
 
 # this file contains all possible api calls that need docker commands 
 # includes: resource manager and resource monitor api calls
 
-#------------------------ALICE-------------------------
+#------------------------TOOLSET-------------------------
 
 @app.route('/cloudproxy/init')
 def cloud_init():
@@ -48,6 +51,7 @@ def cloud_init():
         # create default pod
         pod = client.networks.create('default_pod', driver='bridge')
         result = str(pod.name) + ' was newly created.'
+    # TODO: setup and run dispatch function somehow
     return jsonify({'result': result})
 
 @app.route('/cloudproxy/pods/<name>', methods=['GET'])
@@ -98,9 +102,8 @@ def cloud_node(name, pod_name):
                     return jsonify({'result': result, 'node_status': node_status, 'node_name': str(name)})
             # make new node
             if result == 'unknown' and node_status == 'unknown':
-                n = client.containers.create(image = "alpine", detach=True, name=str(name), network=pod.name)
+                n = client.containers.run(image = "alpine", command='/bin/sh', detach=True, tty=True, name=str(name), network=pod.name)
                 nodes.append(Node(name, n.id))
-                print(nodes)
                 result = 'node_added'
                 node_status = 'Idle'
                 print('Successfully added a new node: ' + str(name))
@@ -121,7 +124,7 @@ def cloud_node_rm(name):
                 if name == nodes[i].name:
                     # remove if status is idle
                     if nodes[i].status == 'Idle':
-                        print('reached')
+                        node_to_remove.stop()
                         node_to_remove.remove() 
                         result = 'successfully removed node: ' + str(name)
                         # remove the node from list of nodes as well
@@ -131,24 +134,23 @@ def cloud_node_rm(name):
                     else:
                         result = 'node ' + str(name) + ' status is not Idle'
                         return jsonify({'result': result})
-                else:
-                    result = 'node ' + str(name) + ' not found'
-                    return jsonify({'result': result})
+            result = 'node ' + str(name) + ' was not instantiated for this cloud.'
+            return jsonify({'result': result})
         except docker.errors.NotFound:
             # node doesn't exist - can't delete
             result = str(name) + ' not found'
             return jsonify({'result': result})
         
-#------------------------HANA-------------------------
-
-@app.route('/cloud/jobs/launch', methods=['POST'])
-def cloud_launch(file):
-    # Create Job instance and print id
-    job = Job(file, "Registered")
-    jobs.append(job)
-    print(job.id)
-    # Look for available node
-    while 1:
+@app.route('/cloudproxy/jobs/launch', methods=['POST'])
+def cloud_launch():
+    if request.method == 'POST':
+        file = request.files['files']
+        # Create Job instance and print id
+        job = Job(file, "Registered")
+        jobs.append(job)
+        job_queue.append(job)
+        print('Request to launch job: ' + str(job.id))
+        # Look for available node
         for node in nodes:
             if node.status == "Idle":
                 try:
@@ -156,105 +158,139 @@ def cloud_launch(file):
                     # Set node & job status as "Running"
                     job.status = "Running"
                     node.status = "Running"
+                    print('Job dispatched: ' + str(job.id))
                     # Assgin job to the node
                     job.node_id = node.id
                     # Run the job
                     commands = file.readlines()
-                    for command in commands:
-                        (exec_code, output) = container.exec_run(command)
-                        container.wait()
-                        # Append logs to a file
-                        file_name = str(job.id) + ".txt"
-                        logs_file = open(file_name, "a")
-                    # Save the log file to node
-                    node.jobs_output.append({'job_output':job.id, 'output':logs_file})
+                    command_str = commands[0].decode("ascii")
+                    for i, command in enumerate(commands):
+                        if i > 0:
+                             command_str = command_str[:(len(command_str)-1)] + "; " + command.decode("ascii")
+                    (exec_code, output) = container.exec_run(command_str)
+                    # Append output
+                    node.jobs_output.append(str({'job_id':job.id, 'output':output}))
                     # Update status when done running
                     job.status = "Completed"
                     node.status = "Idle"
                     result = 'Job ' + str(job.id) + ' is completed'
                     return jsonify({'result': result})
                 except docker.errors.NotFound:
+                    print(node.name, ' not found')
                     continue
-    
-@app.route('/cloud/job/abort/<job_id>', methods=['DELETE'])    
+            # job_dispatch handles case when all nodes are busy
+            # it runs separately from the API to go through the queue and run the jobs that are waiting for an available node
+            job_queue.append(job)
+            return jsonify({'result': 'all nodes are busy, your job will run once a node becomes available'})
+
+@app.route('/cloudproxy/jobs/abort/<job_id>', methods=['GET'])    
 def cloud_abort(job_id):
+    if request.method == 'GET':
+        print('Request to abort job: ' + str(job_id))
+        for i in range(len(job_queue)):
+            if job_queue[i].id == job_id:
+                # Job registered, remove job from queue
+                if job_queue[i].status == "Registered":
+                    del job_queue[i]
+                    result = 'Job ' + str(job_id) + ' is aborted'
+                    return jsonify({'result': result})
+                # Job completed
+                elif job_queue[i].status == "Completed":
+                    result = 'Job ' + str(job_id) + " cannot be aborted. It has been completed."
+                    return jsonify({'result': result})
+                # Job running
+                elif job_queue[i].status == "Running":
+                    for node in nodes:
+                        if node.id == job_queue[i].node_id:
+                            try:
+                                container = client.containers.get(node.name)
+                                container.stop()
+                                node.status = "Idle"
+                                job_queue[i].status = "Aborted"
+                                result = 'Job ' + str(job_id) + 'is aborted'
+                                return jsonify({'result': result})
+                            except docker.errors.NotFound:
+                                result = 'Container ' + str(node.name) + ' for job ' + str(job_id) + ' not found'
+                                return jsonify({'result': result})
+                    result = 'Node ' + str(job.node_id) + ' for job' + str(job_id) + ' not found'
+                    return jsonify({'result': result})
+        # Job not found in the queue
+        result = 'Job ' + str(job_id) + " not found."
+        return jsonify({'result': result})
+
+# ------------------------MONITORING-------------------------
+
+@app.route('/cloudproxy/pods/all', methods=['GET'])
+def cloud_pod_ls():
+    # for the moment, only default node is queryed since clusters are not supported
+    # for pod in pods:
+    # the name, ID and number of nodes attached to it must be printed to stdout
+    pod = client.networks.get('default_pod')
+    return jsonify({'pod_name':pod.name, 'pod_id':pod.id, 'num_nodes':str(len(pod.containers))})
+
+@app.route('/cloudproxy/nodes/all', methods=['GET'])
+def cloud_node_ls_all():
+    result = []
+    for node in nodes:
+    # name, ID and status must be printed to stdout
+        n = {'node_name':node.name, 'node_id':node.id, 'status':node.status}
+        result.append(n)
+    return jsonify(result)
+
+@app.route('/cloudproxy/nodes/<pod_id>', methods=['GET'])
+def cloud_node_ls(pod_id):
+    result = []
+    for node in nodes:
+    # name, ID and status must be printed to stdout
+    # currently only accomodates one resource pod -- need to change for future cluster
+        n = {'node_name':node.name, 'node_id':node.id, 'status':node.status}
+        result.append(n)
+    return jsonify(result)
+
+@app.route('/cloudproxy/jobs/all', methods=['GET'])
+def cloud_job_ls_all():
+    #the name, ID, node ID (if assigned to a node) and status
+    result = []
     for job in jobs:
-        if job.id is job_id:
-            # Job registered, remove job from queue
-            if job.status == "Registered":
-                jobs.remove(job)
-                result = 'Job ' + str(job_id) + ' is aborted'
-                return jsonify({'result': result})
-            # Job completed
-            elif job.status == "Completed":
-                result = 'Job ' +str(job_id) + " cannot be aborted. It has been completed."
-                return jsonify({'result': result})
-            # Job running
-            elif job.status == "Running":
-                for node in nodes:
-                    if node.id is job.node_id:
-                        try:
-                            container = client.containers.get(node.name)
-                            container.stop()
-                            node.status = "Idle"
-                            job.status = "Aborted"
-                            result = 'Job ' + str(job_id) + 'is aborted'
-                            return jsonify({'result': result})
-                        except docker.errors.NotFound:
-                            result = 'Container ' + str(node.name) + ' for job ' + str(job_id) + ' not found'
-                            return jsonify({'result': result})
-                result = 'Node ' + str(job.node_id) + ' for job' + str(job_id) + ' not found'
-                return jsonify({'result': result})
-    # Job not found in the queue
-    result = 'Job ' + str(job_id) + " not found."
-    return jsonify({'result': result})
+        if job.node_id != "":
+            j = {'job_name':job.name,'job_id':job.id,'node_id':job.node_id,'status':job.status}
+            result.append(j)
+    return jsonify(result)
 
-# ------------------------JOSHUA-------------------------
+@app.route('/cloudproxy/jobs/<node_id>', methods=['GET'])
+def cloud_job_ls(node_id):
+    #the name, ID, node ID (if assigned to a node) and status
+    result = []
+    for job in jobs:
+        if job.node_id == node_id:
+            j = {'job_name':job.name,'job_id':job.id,'node_id':job.node_id,'status':job.status}
+            result.append(j)
+    return jsonify(result)
 
-@app.route('/cloudproxy/nodes/all')
-def cloud_get_all_nodes():
-    # TODO: loop through all nodes and add them to the json
-    if request.method == 'GET':
-
-        nodes_list = client.network.containers.list(all=True)
-        return jsonify(nodes_list)
-
-@app.route('/cloudproxy/nodes/<pod_id>')
-def cloud_get_pod_nodes(pod_id):
-    if request.method == 'GET':
-        network = client.networks.get(pod_id)
-        return jsonify(network.containers.list(all=True))
-
-@app.route('/cloudproxy/jobs/all')
-def cloud_get_all_jobs():
-    # TODO: loop through all nodes and add them to the json
-    if request.method == 'GET':
-        return jsonify(jobs)
-
-@app.route('/cloudproxy/pods/all')
-def cloud_get_all_pods():
-    pods = client.networks.list()
-    response = requests.get('/cloud/pods/' + pods[0]).json()
-    for pod in pods[1:]:
-        response.update(requests.get('/cloud/pods/' + str(pod)).json())
-    return response
-
-@app.route('/cloudproxy/pods/job_numbers')
-def cloud_get_all_pods_job_numbers():
-    pods = client.networks.list()
-    num_jobs = []
-    for pod in pods:
-        network = client.networks.get(pod.name)
-        num_jobs.append(len(network.containers))
-
-    return num_jobs
-
-@app.route('/cloudproxy/nodes/log/<node_id>')
-def get_node_log(node_id):
-    nodes = cloud_get_all_nodes()
+@app.route('/cloudproxy/jobs/log/<job_id>', methods=['GET'])
+def cloud_job_log(job_id):
+    # prints out the log of a specified job
+    result = []
+    node_id = ""
+    for job in jobs:
+        if job.id == job_id:
+            node_id = job.node_id
+            break
     for node in nodes:
         if node.id == node_id:
-            return node.jobs_output
+            result = node.jobs_output
+            break
+    return jsonify(result)
+
+@app.route('/cloudproxy/nodes/log/<node_id>', methods=['GET'])
+def cloud_log_node(node_id):
+    # prints out the entire log of a specified node
+    result = []
+    for node in nodes:
+        if node.id == node_id:
+            result = node.jobs_output
+            break
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=6000)

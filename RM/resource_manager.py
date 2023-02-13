@@ -16,7 +16,7 @@ def cloud():
         response = 'Cloud says hello!'
         return jsonify({'response': response})
 
-#------------------------ALICE-------------------------
+#------------------------TOOLSET-------------------------
 
 @app.route('/cloud/init', methods=['GET'])
 def cloud_init():
@@ -97,24 +97,29 @@ def cloud_node_rm(name):
         result = dictionary['result']
         return jsonify({'result': str(result), 'node_name':str(name)}) 
 
-
-#------------------------HANA-------------------------
-
 @app.route('/cloud/jobs/launch', methods=['POST'])
 def cloud_launch():
     if request.method == 'POST':
         print('Request to post a file')
         job_file = request.files['files']
-        #TODO: send job to appropriate proxy
-        print(job_file.read())
-        result = 'success'
+        r = requests.post(proxy_url + '/cloudproxy/jobs/launch', files={'files': job_file})
+        result = r.json()['result']
         return jsonify({'result': result})
 
-#TODO
-@app.route('/cloud/jobs/abort/<job_id>', methods=['DELETE'])
-def cloud_abort():
-    if request.method == 'DELETE':
-        pass
+@app.route('/cloud/jobs/abort/<job_id>', methods=['GET'])
+def cloud_abort(job_id):
+    if request.method == 'GET':
+        print('Request to abort job: ' + str(job_id))
+        data = BytesIO()
+
+        cURL.setopt(cURL.URL, proxy_url + '/cloudproxy/jobs/abort/' + str(job_id))
+        cURL.setopt(cURL.WRITEFUNCTION, data.write)
+        cURL.perform()
+        dictionary = json.loads(data.getvalue())
+        print(dictionary)
+
+        result = dictionary['result']
+        return jsonify({'result': str(result)}) 
 
 #-------------------------------------------------
 
