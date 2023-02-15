@@ -3,6 +3,7 @@
 <html>
 <head>
     <title>Cloud Monitoring Dashboard</title>
+    <meta http-equiv="refresh" content="10">
 </head>
   
 <!-- Adding some style to table (OPTIONAL) -->
@@ -34,13 +35,13 @@
     </th>
       
 <!-- For loop logic of jinja template -->
-{%for node in nodes%}
+{%for node, log in nodes_with_logs%}
   
 <!-- table rows -->
 <tr>
-    <td>{{node.name}}</td>
+    <td>{{node.node_name}}</td>
     <td>{{node.status}}</td>
-    <td>{{node.log}}</td>
+    <td>{{log}}</td>
 {%endfor%}
   
 </tr>

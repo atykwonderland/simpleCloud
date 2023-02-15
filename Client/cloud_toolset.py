@@ -83,7 +83,7 @@ def cloud_node_ls(url, command):
     if len(command_list) == 3:
         cURL.setopt(cURL.URL, url + '/cloudmonitor/nodes/all')
         cURL.perform()
-    elif len(command_list == 4):
+    elif len(command_list) == 4:
         #TODO: this url doesn't exist yet
         cURL.setopt(cURL.URL, url + '/cloudmonitor/nodes/' + command_list[3])
         cURL.perform()
@@ -95,7 +95,7 @@ def cloud_job_ls(url, command):
     if len(command_list) == 3:
         cURL.setopt(cURL.URL, url + '/cloudmonitor/jobs/all')
         cURL.perform()
-    elif len(command_list == 4):
+    elif len(command_list) == 4:
         cURL.setopt(cURL.URL, url + '/cloudmonitor/jobs/' + command_list[3])
         cURL.perform()
     else:
@@ -103,7 +103,7 @@ def cloud_job_ls(url, command):
 
 def cloud_job_log(url, command):
     command_list = command.split()
-    if len(command_list == 4):
+    if len(command_list) == 4:
         cURL.setopt(cURL.URL, url + '/cloudmonitor/jobs/log/' + command_list[3])
         cURL.perform()
     else:
@@ -111,7 +111,7 @@ def cloud_job_log(url, command):
 
 def cloud_log_node(url, command):
     command_list = command.split()
-    if len(command_list == 4):
+    if len(command_list) == 4:
         cURL.setopt(cURL.URL, url + '/cloudmonitor/nodes/log/' + command_list[3])
         cURL.perform()
     else:

@@ -20,9 +20,9 @@ class Pod:
 class Node:
     # list of dictionaires for output log
     # {'job_id': id, 'output': output}
-    jobs_output = []
 
     def __init__(self, name, id) -> None:
+        self.jobs_output = []
         self.name = name
         self.status = "Idle"
         self.id = id
@@ -148,7 +148,6 @@ def cloud_launch():
         # Create Job instance and print id
         job = Job(file, "Registered")
         jobs.append(job)
-        job_queue.append(job)
         print('Request to launch job: ' + str(job.id))
         # Look for available node
         for node in nodes:
@@ -157,6 +156,9 @@ def cloud_launch():
                     container = client.containers.get(node.name)
                     # Set node & job status as "Running"
                     job.status = "Running"
+                    for i in range(len(jobs)):
+                        if job.id == jobs[i].id:
+                            jobs[i].status = "Running"
                     node.status = "Running"
                     print('Job dispatched: ' + str(job.id))
                     # Assgin job to the node
@@ -170,18 +172,22 @@ def cloud_launch():
                     (exec_code, output) = container.exec_run(command_str)
                     # Append output
                     node.jobs_output.append(str({'job_id':job.id, 'output':output}))
+                    print("output appended to " + node.id)
                     # Update status when done running
                     job.status = "Completed"
+                    for i in range(len(jobs)):
+                        if job.id == jobs[i].id:
+                            jobs[i].status = "Completed"
                     node.status = "Idle"
                     result = 'Job ' + str(job.id) + ' is completed'
                     return jsonify({'result': result})
                 except docker.errors.NotFound:
                     print(node.name, ' not found')
                     continue
-            # job_dispatch handles case when all nodes are busy
-            # it runs separately from the API to go through the queue and run the jobs that are waiting for an available node
-            job_queue.append(job)
-            return jsonify({'result': 'all nodes are busy, your job will run once a node becomes available'})
+        # job_dispatch handles case when all nodes are busy
+        # it runs separately from the API to go through the queue and run the jobs that are waiting for an available node
+        job_queue.append(job)
+        return jsonify({'result': 'all nodes are busy, your job will run once a node becomes available'})
 
 @app.route('/cloudproxy/jobs/abort/<job_id>', methods=['GET'])    
 def cloud_abort(job_id):
@@ -192,6 +198,9 @@ def cloud_abort(job_id):
                 # Job registered, remove job from queue
                 if job_queue[i].status == "Registered":
                     del job_queue[i]
+                    for j in range(len(jobs)):
+                        if jobs[j].id == job_id:
+                            jobs[j].status = "Aborted"
                     result = 'Job ' + str(job_id) + ' is aborted'
                     return jsonify({'result': result})
                 # Job completed
@@ -212,9 +221,17 @@ def cloud_abort(job_id):
                             except docker.errors.NotFound:
                                 result = 'Container ' + str(node.name) + ' for job ' + str(job_id) + ' not found'
                                 return jsonify({'result': result})
+                    for j in range(len(jobs)):
+                        if jobs[j].id == job_id:
+                            jobs[j].status = "Aborted"
                     result = 'Node ' + str(job.node_id) + ' for job' + str(job_id) + ' not found'
                     return jsonify({'result': result})
         # Job not found in the queue
+        for i in range(len(jobs)):
+            if jobs[i].id == job_id:
+                if jobs[i].status == "Completed":
+                    result = 'Job' + str(job_id) + "cannot be aborted. It has been completed."
+                    return jsonify({'result': result})
         result = 'Job ' + str(job_id) + " not found."
         return jsonify({'result': result})
 
