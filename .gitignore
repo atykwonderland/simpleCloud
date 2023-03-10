@@ -1,3 +1,6 @@
 .vscode
 container_instance.py
 container_manager.py
+test.py
+A1Submission/**
+**/*.zip
