@@ -5,10 +5,10 @@ import string
 
 app = Flask(__name__)
 
-# Light computations on small data (e.g., random string generation for a hello X message). 
-# A call to execute an instance would take at most a second and creates minimal loading.
+#TODO: Medium computations on medium data (e.g., image transformations). 
+# A call to execute an instance would take at least 10s of seconds and does not create significant CPU or memory loads.
 @app.route('/')
-def light():
+def medium():
     if len(sys.argv) < 2:
         return 'something went wrong!'
     letters = string.ascii_letters

@@ -5,10 +5,10 @@ import string
 
 app = Flask(__name__)
 
-# Light computations on small data (e.g., random string generation for a hello X message). 
-# A call to execute an instance would take at most a second and creates minimal loading.
+# TODO: Heavy computations on large data (e.g., video transformations, or training neural networks). 
+# A call to execute an instance would take at least 100s of seconds with significant CPU and memory loads.
 @app.route('/')
-def light():
+def heavy():
     if len(sys.argv) < 2:
         return 'something went wrong!'
     letters = string.ascii_letters
