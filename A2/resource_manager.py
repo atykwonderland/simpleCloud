@@ -180,9 +180,11 @@ def cloud_resume(pod_id):
     print(dictionary)
     nodes = dictionary['result']
     for node_id in [x for x in nodes if x['status'] == "online"]:
-        echo "'experimental-mode on; add server node"+pod_URL+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.sock"
+        command1 = echo "'experimental-mode on; add server node"+pod_URL+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.sock"
+        subprocess.run(command, shell=True, check=True)
         # need to update this address.
-        echo "'experimental-mode on; enable server "pod_URL+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.sock'"
+        command2 = echo "'experimental-mode on; enable server "pod_URL+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.sock'"
+        subprocess.run(command2, shell=True, check=True)
          
 #TODO: Joshua -- see above commands for sample haproxy stuff
 @app.route('/cloud/pods/pause/<pod_id>')
@@ -220,7 +222,8 @@ def cloud_pause(pod_id):
         
     # disable the server
     for node_id in [x for x in nodes if x['status'] != "online"]:
-        echo "'experimental-mode on; disable server "+pod_URL+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.sock"
+        command = echo "'experimental-mode on; disable server "+pod_URL+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.sock"
+        subprocess.run(command, shell=True, check=True)
         # is the way that I added the node_id correct?
 
 #------------------------TOOLSET-------------------------
