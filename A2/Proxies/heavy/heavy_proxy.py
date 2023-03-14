@@ -20,7 +20,7 @@ class Node:
     def __init__(self, name, id) -> None:
         self.jobs_output = []
         self.name = name
-        self.status = "Idle"
+        self.status = "New"
         self.id = id
 
 #------------------------TOOLSET-------------------------
