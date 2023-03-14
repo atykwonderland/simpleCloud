@@ -67,7 +67,7 @@ def cloud_init():
                     'name': 'medium_pod'})
 
 #TODO: Hana
-@app.route('/cloudproxy/nodes/<name>/<pod_name>', methods=['GET']) 
+@app.route('/cloud/nodes/<name>/<pod_name>', methods=['GET']) 
 def cloud_node(name, pod_name):
     if request.method == 'GET':
         print('Request to register new node: ' + str(name) + ' in pod ' + str(pod_name))
@@ -102,7 +102,7 @@ def cloud_node(name, pod_name):
             return jsonify({'result': result, 'node_status': 'not created', 'node_name': str(name)})
 
 #TODO: Hana
-@app.route('/cloudproxy/nodes/rm/<name>/<pod_name>', methods=['GET'])   
+@app.route('/cloud/nodes/rm/<name>/<pod_name>', methods=['GET'])   
 def cloud_pod_node_rm(name, pod_name):
     if request.method == 'GET':
         print('Request to remove node: ' + str(name) + 'from pod' + str(pod_name))
@@ -115,19 +115,18 @@ def cloud_pod_node_rm(name, pod_name):
                     if nodes[i].status == 'New':
                         node_to_remove.stop()
                         node_to_remove.remove() 
-                        result = 'successfully removed node: ' + str(name) 'from pod' + str(pod_name)
+                        result = 'successfully removed node: ' + str(name) + 'from pod' + str(pod_name)
                         # remove the node from list of nodes as well
                         del nodes[i]
                         # TODO: pause the pod if it is the last node
                         
                         
                         return jsonify({'result': result})
-                    # TODO: notify the LB that it should not redirect traffic through it anymore
                     elif node[i].status == 'Online':
                         node_to_remove.stop()
                         node_to_remove.remove()
                         del nodes[i]
-                        result = 'successfully removed node: ' + str(name) 'from pod' + str(pod_name)
+                        result = 'successfully removed node: ' + str(name) + 'from pod' + str(pod_name)
                         return jsonify({'result': result})
             result = 'node ' + str(name) + ' was not instantiated for this cloud.'
             return jsonify({'result': result})
