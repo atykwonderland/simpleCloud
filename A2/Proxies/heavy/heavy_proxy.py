@@ -67,7 +67,7 @@ def cloud_init():
                     'name': 'heavy_pod'})
 
 #TODO: Hana
-@app.route('/cloudproxy/nodes/<name>/<pod_name>', methods=['GET']) 
+@app.route('/cloud/nodes/<name>/<pod_name>', methods=['GET']) 
 def cloud_node(name, pod_name):
     if request.method == 'GET':
         print('Request to register new node: ' + str(name) + ' in pod ' + str(pod_name))
@@ -102,7 +102,7 @@ def cloud_node(name, pod_name):
             return jsonify({'result': result, 'node_status': 'not created', 'node_name': str(name)})
 
 #TODO: Hana
-@app.route('/cloudproxy/nodes/<name>/<pod_name>', methods=['GET']) 
+@app.route('/cloud/nodes/<name>/<pod_name>', methods=['GET']) 
 def cloud_node(name, pod_name):
     if request.method == 'GET':
         print('Request to register new node: ' + str(name) + ' in pod ' + str(pod_name))
