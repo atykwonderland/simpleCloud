@@ -157,23 +157,48 @@ def remove_node(name, pod_id):
 #TODO: Joshua -- see above commands for sample haproxy stuff
 @app.route('/cloud/pods/resume/<pod_id>')
 def cloud_resume(pod_id):
-    echo "'enable server "+pod_id+"' | socat stdio /var/run/haproxy.conf"
+    
+    pod_name = ""
+    for name in pods:
+        if pod[name] == pod_id: pod_name = name
+    
+    if pod_name == "light_pod":
+        pod_URL = light_proxy
+    elif pod_name == "medium_pod":
+        pod_URL = medium_proxy
+    elif pod_name == "heavy_pod":
+        pod_URL = heavy_proxy
+            
+   
+    echo "'enable server "+pod_URL+"' | socat stdio /var/run/haproxy.conf"
     # get the nodes associated with the pod
     data = BytesIO()
-    cURL.setopt(cURL.URL, monitor + '/cloudmonitor/nodes/' + str(pod_id))
+    cURL.setopt(cURL.pod_URL, monitor + '/cloudmonitor/nodes/' + str(pod_id))
     cURL.setopt(cURL.WRITEFUNCTION, data.write)
     cURL.perform()
     dictionary = json.loads(data.getvalue())
     print(dictionary)
     nodes = dictionary['result']
     for node_id in [x for x in nodes if x['status'] == "online"]:
-        echo "'add server node"+pod_id+"/"+node_id+"' 192.168.1.14:80 | socat unix-connect:/var/run/haproxy.conf stdio"
+        echo "'experimental-mode on; add server node"+pod_URL+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.sock"
         # need to update this address.
-        echo "'enable server "pod_id+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.conf"
+        echo "'experimental-mode on; enable server "pod_URL+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.sock'"
          
 #TODO: Joshua -- see above commands for sample haproxy stuff
 @app.route('/cloud/pods/pause/<pod_id>')
 def cloud_pause(pod_id):
+    
+    pod_name = ""
+    for name in pods:
+        if pod[name] == pod_id: pod_name = name
+    
+    if pod_name == "light_pod":
+        pod_URL = light_proxy
+    elif pod_name == "medium_pod":
+        pod_URL = medium_proxy
+    elif pod_name == "heavy_pod":
+        pod_URL = heavy_proxy
+    
     # get the nodes associated with the pod
     data = BytesIO()
     cURL.setopt(cURL.URL, monitor + '/cloudmonitor/nodes/' + str(pod_id))
@@ -186,7 +211,7 @@ def cloud_pause(pod_id):
     # remove the nodes that are online     
     for node_id in [x for x in nodes if x['status'] == "online"]:
         data = BytesIO()
-        cURL.setopt(cURL.URL, proxy_url + '/cloudproxy/nodes/rm/' + str(node_id))
+        cURL.setopt(cURL.URL, pod_URL + '/cloudproxy/nodes/rm/' + str(node_id))
         cURL.setopt(cURL.WRITEFUNCTION, data.write)
         cURL.perform()
         dictionary = json.loads(data.getvalue())
@@ -195,8 +220,8 @@ def cloud_pause(pod_id):
         
     # disable the server
     for node_id in [x for x in nodes if x['status'] != "online"]:
-        echo "'disable server "+pod_id+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.conf"
-        #need to use unix-connect? need to correct the address of the backend
+        echo "'experimental-mode on; disable server "+pod_URL+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.sock"
+        # is the way that I added the node_id correct?
 
 #------------------------TOOLSET-------------------------
 
