@@ -133,6 +133,29 @@ def cloud_pod_node_rm(name, pod_name):
         result = str(name) + ' not found'
         return jsonify({'result': result})
 
+@app.route('/cloud/pods/launch')
+def launch():
+    for node in nodes:
+        if node.status == 'New'
+            [img, logs] = client.images.build(path='/home/comp598-user/light/', rm=True, dockerfile='/home/comp598-user/light/Dockerfile')
+            for container in client.container.list():
+                if container.name == node.name:
+                    container.remode(v=True, force=True)
+            # TODO: port number
+            client.containers.run(image=img,
+                                  detach=True,
+                                  name=node.name,
+                                  command=['python','app.py',node.name],
+                                  ports={5000/tcp: port})
+            node.status = 'Online'
+            return jsonify({'response': 'success',
+                            'name': node.name,
+                            'status': node.status]})
+
+    return jsonify({'response': 'failure',
+                    'reason': 'No node available'})
+
+
 #TODO: Joshua
 @app.route('/cloudproxy/nodes/rm/<name>')   
 def cloud_node_rm(name):
