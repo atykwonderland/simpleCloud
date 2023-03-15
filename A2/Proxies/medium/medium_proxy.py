@@ -17,11 +17,12 @@ class Node:
     # list of dictionaires for output log
     # {'job_id': id, 'output': output}
 
-    def __init__(self, name, id) -> None:
+    def __init__(self, name, id, port) -> None:
         self.jobs_output = []
         self.name = name
         self.status = "New"
         self.id = id
+        self.port = port
 
 #------------------------TOOLSET-------------------------
 
