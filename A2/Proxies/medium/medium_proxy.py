@@ -119,9 +119,6 @@ def cloud_pod_node_rm(name, pod_name):
                         result = 'successfully removed node: ' + str(name) + 'from pod' + str(pod_name)
                         # remove the node from list of nodes as well
                         del nodes[i]
-                        # TODO: pause the pod if it is the last node
-                        
-                        
                         return jsonify({'result': result})
                     elif node[i].status == 'Online':
                         node_to_remove.stop()
