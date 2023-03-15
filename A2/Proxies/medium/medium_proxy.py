@@ -20,7 +20,7 @@ class Node:
     def __init__(self, name, id) -> None:
         self.jobs_output = []
         self.name = name
-        self.status = "Idle"
+        self.status = "New"
         self.id = id
 
 #------------------------TOOLSET-------------------------
@@ -91,7 +91,7 @@ def cloud_node(name, pod_name):
             # make new node
             if result == 'unknown' and node_status == 'unknown':
                 n = client.containers.run(image = "alpine", command='/bin/sh', detach=True, tty=True, name=str(name), network=pod.name)
-                nodes.append(Node(name, n.id, pod_name))
+                nodes.append(Node(name, n.id, pod_name, None))
                 result = 'node_added'
                 node_status = 'New'
                 print('Successfully added a new node: ' + str(name) + 'to pod' + str(pod_name))
@@ -137,22 +137,30 @@ def cloud_pod_node_rm(name, pod_name):
 
 @app.route('/cloud/pods/launch')
 def launch():
-    for i in range(len(nodes)):
-        if nodes[i].status == 'New'
+    for node in nodes:
+        if node.status == 'New'
             [img, logs] = client.images.build(path='/home/comp598-user/medium/', rm=True, dockerfile='/home/comp598-user/medium/Dockerfile')
             for container in client.container.list():
-                if container.name == nodes[i].name:
+                if container.name == node.name:
                     container.remove(v=True, force=True)
-            port = 7020 + i
+            port = 7020
+            taken = true
+            while(taken):
+                port = port + 1
+                taken = false
+                for i in range(len(nodes)):
+                    if nodes[i].port == port:
+                        taken = true  
             client.containers.run(image=img,
                                   detach=True,
-                                  name=nodes[i].name,
-                                  command=['python','app.py',nodes[i].name],
-                                  ports={5000/tcp: port})
-            nodes[i].status = 'Online'
+                                  name=node.name,
+                                  command=['python','app.py',node.name],
+                                  ports={'5000/tcp': port})
+            node.status = 'Online'
+            node.port = port
             return jsonify({'response': 'success',
-                            'name': nodes[i].name,
-                            'status': nodes[i].status]})
+                            'name': node.name,
+                            'port': node.port})
 
     return jsonify({'response': 'failure',
                     'reason': 'No node available'})
