@@ -180,7 +180,7 @@ def cloud_resume(pod_id):
     print(dictionary)
     nodes = dictionary['result']
     for node_id in [x for x in nodes if x['status'] == "online"]:
-        command1 = echo "'experimental-mode on; add server node"+pod_URL+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.sock"
+        command1 = echo "'experimental-mode on; add server "+pod_URL+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.sock"
         subprocess.run(command, shell=True, check=True)
         # need to update this address.
         command2 = echo "'experimental-mode on; enable server "pod_URL+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.sock'"
@@ -225,6 +225,54 @@ def cloud_pause(pod_id):
         command = echo "'experimental-mode on; disable server "+pod_URL+"/"+node_id+"' | sudo socat stdio /var/run/haproxy.sock"
         subprocess.run(command, shell=True, check=True)
         # is the way that I added the node_id correct?
+        
+@app.route('/launch/<pod_id>')
+def launch(pod_id):
+    
+#     You run the cloud launch JOB and it puts the state of the node as ONLINE and starts the web server. 
+#     Also, the cloud launch informs the load balancer about the new node. 
+#     After this point the load balancer has the new node available for taking workload requests.
+#     don't need to pass the pod id when calling the proxy
+
+    pod_name = ""
+    for name in pods:
+        if pod[name] == pod_id: pod_name = name
+    
+    if pod_name == "light_pod":
+        pod_URL = light_proxy
+    elif pod_name == "medium_pod":
+        pod_URL = medium_proxy
+    elif pod_name == "heavy_pod":
+        pod_URL = heavy_proxy
+
+
+    cURL.setopt(cURL.URL, pod_URL + '/launch')
+    buffer = bytearray()
+
+    cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
+    cURL.perform()
+
+    if cURL.getinfo(cURL.RESPONSE_CODE) == 200:
+        response_dictionary = json.loads(buffer.decode())
+        response = response_dictionary['response']
+        if response == 'success':
+            port = response_dictionary['port']
+            name = response_dictionary['name']
+            online = response_dictionary['online']
+            print('port: ' + port)
+            if running:
+                command1 = "echo 'experimental-mode on; add server light-servers/'" + name + ' ' + ip_proxy[7:-5] + ':' + port + '| sudo socat stdio /run/haproxy/admin.sock'
+                subprocess.run(command, shell=True, check=True)
+                
+                command2 = "echo 'experimental-mode on; set server light-servers/'" + name + ' state ready ' + '| sudo socat stdio /run/haproxy/admin.sock'
+                subprocess.run(command2, shell=True, check=True) 
+                return jsonify({'response': 'success',
+                                'port': port,
+                                'name': name,
+                                'online': online})
+    
+    return jsonify({'response': 'failure',
+                    'reason': 'Unknown'})
 
 #------------------------TOOLSET-------------------------
 
