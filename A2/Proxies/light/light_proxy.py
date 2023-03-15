@@ -135,22 +135,22 @@ def cloud_pod_node_rm(name, pod_name):
 
 @app.route('/cloud/pods/launch')
 def launch():
-    for node in nodes:
-        if node.status == 'New'
+    for i in range(len(nodes)):
+        if nodes[i].status == 'New'
             [img, logs] = client.images.build(path='/home/comp598-user/light/', rm=True, dockerfile='/home/comp598-user/light/Dockerfile')
             for container in client.container.list():
-                if container.name == node.name:
-                    container.remode(v=True, force=True)
-            # TODO: port number
+                if container.name == nodes[i].name:
+                    container.remove(v=True, force=True)
+            port = 7000 + i
             client.containers.run(image=img,
                                   detach=True,
                                   name=node.name,
                                   command=['python','app.py',node.name],
                                   ports={5000/tcp: port})
-            node.status = 'Online'
+            nodes[i].status = 'Online'
             return jsonify({'response': 'success',
-                            'name': node.name,
-                            'status': node.status]})
+                            'name': nodes[i].name,
+                            'status': nodes[i].status]})
 
     return jsonify({'response': 'failure',
                     'reason': 'No node available'})
