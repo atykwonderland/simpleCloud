@@ -146,8 +146,8 @@ def launch():
             port = 7020 + i
             client.containers.run(image=img,
                                   detach=True,
-                                  name=node.name,
-                                  command=['python','app.py',node.name],
+                                  name=nodes[i].name,
+                                  command=['python','app.py',nodes[i].name],
                                   ports={5000/tcp: port})
             nodes[i].status = 'Online'
             return jsonify({'response': 'success',
