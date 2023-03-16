@@ -111,7 +111,7 @@ def cloud_pod_node_rm(name, pod_name):
         # if node exists
         node_to_remove = client.containers.get(name)
         for i in range(len(nodes)):
-            if name == nodes[i].name and pod_name == node[i].pod_name:
+            if name == nodes[i].name and pod_name == nodes[i].pod_name:
                 # remove if status is new
                 if nodes[i].status == 'New':
                     node_to_remove.stop()
@@ -120,7 +120,7 @@ def cloud_pod_node_rm(name, pod_name):
                     # remove the node from list of nodes as well
                     del nodes[i]
                     return jsonify({'result': result})
-                elif node[i].status == 'Online':
+                elif nodes[i].status == 'Online':
                     node_to_remove.stop()
                     node_to_remove.remove()
                     del nodes[i]
@@ -136,19 +136,19 @@ def cloud_pod_node_rm(name, pod_name):
 @app.route('/cloud/pods/launch')
 def launch():
     for node in nodes:
-        if node.status == 'New'
+        if node.status == 'New':
             [img, logs] = client.images.build(path='/home/comp598-user/light/', rm=True, dockerfile='/home/comp598-user/light/Dockerfile')
             for container in client.container.list():
                 if container.name == node.name:
                     container.remove(v=True, force=True)
             port = 7000
-            taken = true
+            taken = True
             while(taken):
                 port = port + 1
-                taken = false
+                taken = False
                 for i in range(len(nodes)):
                     if nodes[i].port == port:
-                        taken = true  
+                        taken = True  
             client.containers.run(image=img,
                                   detach=True,
                                   name=node.name,
