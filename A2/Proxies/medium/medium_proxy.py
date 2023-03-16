@@ -80,26 +80,29 @@ def cloud_node(name, pod_name):
             if node.size() >= MAX_MEDIUM_NODES:
                 print('Pod' + str(pod_name) + 'is already at its maximum resource capacity')
                 result = 'pod at maximum reasource capacity'
-                return jsonify({'result': result, 'node_status': 'not created', 'node_name': str(name)})
+                response = 'failure'
+                return jsonify({'response': response, 'result': result, 'node_status': 'not created', 'name': str(name), 'pod_name': str(pod_name)})
             for node in nodes:
                 # node already exists
                 if name == node.name:
                     node_status = node.status
                     print('Node already exists: ' + str(name) + ' with status ' + str(node_status))
                     result = 'node already exists'
-                    return jsonify({'result': result, 'node_status': node_status, 'node_name': str(name)})
+                    response = 'failure'
+                    return jsonify({'response': response, 'result': result, 'node_status': node_status, 'name': str(name), 'pod_name': str(pod_name)})
             # make new node
             if result == 'unknown' and node_status == 'unknown':
                 n = client.containers.run(image = "alpine", command='/bin/sh', detach=True, tty=True, name=str(name), network=pod.name)
                 nodes.append(Node(name, n.id, pod_name, None))
+                response = 'success'
                 result = 'node_added'
                 node_status = 'New'
                 print('Successfully added a new node: ' + str(name) + 'to pod' + str(pod_name))
-            return jsonify({'result': result, 'node_status': node_status, 'node_name': str(name)})
+            return jsonify({'response': response, 'result': result, 'node_status': node_status, 'name': str(name), 'pod_name': str(pod_name)})
         except docker.errors.NotFound:
             # pod doesn't exist - can't create node
             result = str(pod_name) + " not found"
-            return jsonify({'result': result, 'node_status': 'not created', 'node_name': str(name)})
+            return jsonify({'response': 'failure', 'result': result, 'node_status': 'not created', 'name': str(name), 'pod_name': str(pod_name)})
 
 @app.route('/cloudproxy/node/remove/<name>/<pod_name>', methods=['GET'])   
 def cloud_pod_node_rm(name, pod_name):
@@ -115,21 +118,25 @@ def cloud_pod_node_rm(name, pod_name):
                         node_to_remove.stop()
                         node_to_remove.remove() 
                         result = 'successfully removed node: ' + str(name) + 'from pod' + str(pod_name)
+                        response = 'success'
                         # remove the node from list of nodes as well
                         del nodes[i]
-                        return jsonify({'result': result})
+                        return jsonify({'response': response, 'result': result, 'node_status': 'Removed', 'name': str(name), 'pod_name': str(pod_name)})
                     elif nodes[i].status == 'Online':
                         node_to_remove.stop()
                         node_to_remove.remove()
                         del nodes[i]
                         result = 'successfully removed node: ' + str(name) + 'from pod' + str(pod_name)
-                        return jsonify({'result': result})
+                        response = 'success'
+                        return jsonify({'response': response, 'result': result, 'node_status': 'Removed', 'name': str(name), 'pod_name': str(pod_name)})
             result = 'node ' + str(name) + ' was not instantiated for this cloud.'
-            return jsonify({'result': result})
+            response = 'failure'
+            return jsonify({'response': response, 'result': result, 'node_status': 'not removed', 'name': str(name), 'pod_name': str(pod_name)})
         except docker.errors.NotFound:
             # node doesn't exist - can't delete
             result = str(name) + ' not found'
-            return jsonify({'result': result})
+            response = 'failure'
+            return jsonify({'response': response, 'result': result, 'node_status': 'not removed', 'name': str(name), 'pod_name': str(pod_name)})
 
 @app.route('/cloud/pods/launch')
 def launch():
