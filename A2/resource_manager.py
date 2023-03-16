@@ -154,7 +154,6 @@ def remove_node(name, pod_id):
     return jsonify({'response': 'failure',
                     'reason': 'unknown'})
 
-#TODO: Joshua -- see above commands for sample haproxy stuff
 @app.route('/cloud/pods/resume/<pod_id>')
 def cloud_resume(pod_id):
     
@@ -174,10 +173,6 @@ def cloud_resume(pod_id):
         pod_URL = medium_proxy
     elif pod_name == "heavy_pod":
         pod_URL = heavy_proxy
-            
-   
-    #TODO: what was this for? 
-    # echo "'enable server "+pod_URL+"' | socat stdio /var/run/haproxy.conf"
 
     # get the nodes associated with the pod
     data = BytesIO()
@@ -194,7 +189,6 @@ def cloud_resume(pod_id):
         command2 = "echo 'experimental-mode on; enable server " + pod_URL + "/" + node_id + "' | sudo socat stdio /var/run/haproxy.sock'"
         subprocess.run(command2, shell=True, check=True)
          
-#TODO: Joshua -- see above commands for sample haproxy stuff
 @app.route('/cloud/pods/pause/<pod_id>')
 def cloud_pause(pod_id):
     
