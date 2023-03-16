@@ -7,14 +7,8 @@ from io import BytesIO
 import requests
 
 light_proxy = 'http://10.140.17.108:5001'
-light_proxy_no_port = '10.140.17.108'
-
 medium_proxy = 'http://10.140.17.107:5001'
-medium_proxy_no_port = '10.140.17.107'
-
 heavy_proxy = 'http://10.140.17.109:5001'
-heavy_proxy_no_port = '10.140.17.109'
-
 monitor = 'http://winter2023-comp598-group03-02.cs.mcgill.ca:7000'
 
 # {name, id}
@@ -74,7 +68,6 @@ def cloud_init():
             
     return jsonify({'response': 'success'}) 
 
-#TODO: Hana -- make sure URL matches what's in the proxy
 @app.route('/cloud/node/register/<name>/<pod_id>')
 def register_node(name, pod_id):
     found = False
@@ -111,7 +104,6 @@ def register_node(name, pod_id):
     return jsonify({'response': 'failure',
                     'reason': 'unknown'})
 
-#TODO: Hana -- make sure URL matches what's in the proxy
 @app.route('/cloud/node/remove/<name>/<pod_id>')
 def remove_node(name, pod_id):
     found = False
