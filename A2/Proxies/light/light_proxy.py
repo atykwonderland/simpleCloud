@@ -11,6 +11,8 @@ client = docker.from_env()
 MAX_LIGHT_NODES = 20
 
 nodes = []
+# {timestamp,request}
+requests = []
 
 # node is container in docker
 class Node:
@@ -166,16 +168,17 @@ def cloud_node_rm(name):
 
 #------------------------MONITORING-------------------------
 
-#TODO: Joshua
-@app.route('/cloudproxy/nodes/<pod_id>')
-def cloud_node_ls(pod_id):
+@app.route('/cloudproxy/nodes')
+def cloud_node_ls():
     result = []
     for node in nodes:
-    # name, ID and status must be printed to stdout
-    # currently only accomodates one resource pod -- need to change for future cluster
         n = {'node_name':node.name, 'node_id':node.id, 'status':node.status}
         result.append(n)
     return jsonify(result)
+
+@app.route('/cloudproxy/pod/requests')
+def cloud_pod_requests_ls():
+    return jsonify(requests)
 
 #------------------------MONITORING-------------------------
 

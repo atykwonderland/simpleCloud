@@ -154,6 +154,8 @@ def remove_node(name, pod_id):
     return jsonify({'response': 'failure',
                     'reason': 'unknown'})
 
+#TODO: launch function
+
 #TODO: Joshua -- see above commands for sample haproxy stuff
 @app.route('/cloud/pods/resume/<pod_id>')
 def cloud_resume(pod_id):
@@ -199,6 +201,16 @@ def cloud_pause(pod_id):
         #need to use unix-connect? need to correct the address of the backend
 
 #------------------------TOOLSET-------------------------
+
+#------------------------MONITORING-------------------------
+
+@app.route('/cloud/pods/all')
+def cloud_pod_ls():
+    print('Request to list all pods')
+    return jsonify(pods)
+
+#------------------------MONITORING-------------------------
+
 
 if __name__ == '__main__':
     app.run(debug=True, host= '0.0.0.0', port=6001)
