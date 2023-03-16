@@ -1,10 +1,9 @@
 from flask import Flask, jsonify, request 
-import sys 
 import pycurl 
 import json 
 import subprocess
 from io import BytesIO
-import requests
+import datetime
 
 light_proxy = 'http://10.140.17.108:5001'
 medium_proxy = 'http://10.140.17.107:5001'
@@ -13,6 +12,10 @@ monitor = 'http://winter2023-comp598-group03-02.cs.mcgill.ca:7000'
 
 # {name, id}
 pods = []
+# {datetime, request}
+light_requests = []
+medium_requests = []
+heavy_requests = []
 
 cURL = pycurl.Curl()
 app = Flask(__name__)
@@ -257,6 +260,14 @@ def launch(pod_id):
             name = response_dictionary['name']
             online = response_dictionary['online']
             print('port: ' + port)
+
+            if pod_name == "light_pod":
+                light_requests.append({'datetime':datetime.datetime.now(),'request':pod_URL + port})
+            elif pod_name == "medium_pod":
+                medium_requests.append({'datetime':datetime.datetime.now(),'request':pod_URL + port})
+            elif pod_name == "heavy_pod":
+                heavy_requests.append({'datetime':datetime.datetime.now(),'request':pod_URL + port})
+            
             if online:
                 command1 = "echo 'experimental-mode on; add server light-servers/'" + name + ' ' + pod_URL[7:-5] + ':' + port + '| sudo socat stdio /run/haproxy/admin.sock'
                 subprocess.run(command1, shell=True, check=True)
@@ -279,6 +290,17 @@ def launch(pod_id):
 def cloud_pod_ls():
     print('Request to list all pods')
     return jsonify(pods)
+
+@app.route('/cloud/pod/requests/<pod_name>')
+def cloud_pod_requests_ls(pod_name):
+    requests = []
+    if pod_name == "light_pod":
+        requests = light_requests
+    elif pod_name == "medium_pod":
+        requests = medium_requests
+    elif pod_name == "heavy_pod":
+        requests = heavy_requests
+    return jsonify(requests)
 
 #------------------------MONITORING-------------------------
 

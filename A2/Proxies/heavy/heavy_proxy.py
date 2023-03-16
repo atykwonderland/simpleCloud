@@ -11,8 +11,6 @@ client = docker.from_env()
 MAX_HEAVY_NODES = 15
 
 nodes = []
-# {timestamp,request}
-requests = []
     
 # node is container in docker
 class Node:
@@ -201,10 +199,6 @@ def cloud_node_ls():
         n = {'node_name':node.name, 'node_id':node.id, 'status':node.status}
         result.append(n)
     return jsonify(result)
-
-@app.route('/cloudproxy/pod/requests')
-def cloud_pod_requests_ls():
-    return jsonify(requests)
 
 #------------------------MONITORING-------------------------
 

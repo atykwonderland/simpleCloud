@@ -38,22 +38,9 @@ def cloud_node_ls(pod_name):
 @app.route('/cloudmonitor/pods/requests/<pod_name>')
 def cloud_log_node(pod_name):
     print('Request to list all incoming requests in pod ' + pod_name)
-    response_json = {}
-
-    if pod_name == 'light_pod':
-        response = requests.get(light_proxy + '/cloudproxy/pod/requests')
-        response_json = response.json()
-        return response_json
-    elif pod_name == 'medium_pod':
-        response = requests.get(light_proxy + '/cloudproxy/pod/requests')
-        response_json = response.json()
-        return response_json
-    elif pod_name == 'heavy_pod':
-        response = requests.get(light_proxy + '/cloudproxy/pod/requests')
-        response_json = response.json()
-        return response_json
-    
+    response = requests.get(manager + '/cloud/pod/requests/' + pod_name)
+    response_json = response.json()
     return response_json
-
+    
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=7000)
