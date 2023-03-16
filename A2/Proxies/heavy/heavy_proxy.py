@@ -175,7 +175,7 @@ def cloud_node_rm(name):
         for i in range(len(nodes)):
             if name == nodes[i].name:
                 # remove if status is idle
-                if nodes[i].status == 'Idle':
+                if nodes[i].status == 'New':
                     node_to_remove.stop()
                     node_to_remove.remove() 
                     result = 'successfully removed node: ' + str(name)
@@ -184,7 +184,7 @@ def cloud_node_rm(name):
                     return jsonify({'result': result})
                 # reject if not idle
                 else:
-                    result = 'node ' + str(name) + ' status is not Idle'
+                    result = 'node ' + str(name) + ' status is not New'
                     return jsonify({'result': result})
         result = 'node ' + str(name) + ' was not instantiated for this cloud.'
         return jsonify({'result': result})
