@@ -28,20 +28,21 @@
 <!-- Table headers -->
     <th>
         <tr style="font-weight: bold;">    
-        <td>Node Name</td>
-        <td>Node Status</td>
-        <td>Node Log</td>
+        <td>Pod Name</td>
+        <td>Timestamp</td>
+        <td>Request</td>
 </tr>
     </th>
       
 <!-- For loop logic of jinja template -->
-{%for node, log in nodes_with_logs%}
-  
-<!-- table rows -->
-<tr>
-    <td>{{node.node_name}}</td>
-    <td>{{node.status}}</td>
-    <td>{{log}}</td>
+{%for pod, reqs in pods_with_reqs%}
+    {%for r in reqs%}
+    <!-- table rows -->
+    <tr>
+        <td>{{pod['name']}}</td>
+        <td>{{r['timestamp']}}</td>
+        <td>{{r['request']}}</td>
+    {%endfor%}
 {%endfor%}
   
 </tr>

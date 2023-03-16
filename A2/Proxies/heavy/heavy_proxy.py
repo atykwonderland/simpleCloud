@@ -11,17 +11,20 @@ client = docker.from_env()
 MAX_HEAVY_NODES = 15
 
 nodes = []
+# {timestamp,request}
+requests = []
     
 # node is container in docker
 class Node:
     # list of dictionaires for output log
     # {'job_id': id, 'output': output}
 
-    def __init__(self, name, id) -> None:
+    def __init__(self, name, id, port) -> None:
         self.jobs_output = []
         self.name = name
         self.status = "New"
         self.id = id
+        self.port = port
 
 #------------------------TOOLSET-------------------------
 
@@ -67,7 +70,7 @@ def cloud_init():
                     'name': 'heavy_pod'})
 
 #TODO: Hana
-@app.route('/cloudproxy/nodes/<name>/<pod_name>', methods=['GET']) 
+@app.route('/cloud/nodes/<name>/<pod_name>', methods=['GET']) 
 def cloud_node(name, pod_name):
     if request.method == 'GET':
         print('Request to register new node: ' + str(name) + ' in pod ' + str(pod_name))
@@ -91,7 +94,7 @@ def cloud_node(name, pod_name):
             # make new node
             if result == 'unknown' and node_status == 'unknown':
                 n = client.containers.run(image = "alpine", command='/bin/sh', detach=True, tty=True, name=str(name), network=pod.name)
-                nodes.append(Node(name, n.id, pod_name))
+                nodes.append(Node(name, n.id, pod_name, None))
                 result = 'node_added'
                 node_status = 'New'
                 print('Successfully added a new node: ' + str(name) + 'to pod' + str(pod_name))
@@ -102,40 +105,66 @@ def cloud_node(name, pod_name):
             return jsonify({'result': result, 'node_status': 'not created', 'node_name': str(name)})
 
 #TODO: Hana
-@app.route('/cloudproxy/nodes/<name>/<pod_name>', methods=['GET']) 
-def cloud_node(name, pod_name):
+@app.route('/cloud/nodes/rm/<name>/<pod_name>', methods=['GET'])   
+def cloud_pod_node_rm(name, pod_name):
     if request.method == 'GET':
-        print('Request to register new node: ' + str(name) + ' in pod ' + str(pod_name))
+        print('Request to remove node: ' + str(name) + 'from pod' + str(pod_name))
         try:
-            # check if pod exists
-            pod = client.networks.get(pod_name)
-            result = 'unknown'
-            node_status = 'unknown'
-            # check if the limit of the pod has been met
-            if node.size() >= 10:
-                print('Pod' + str(pod_name) + 'is already at its maximum resource capacity')
-                result = 'pod at maximum reasource capacity'
-                return jsonify({'result': result, 'node_status': 'not created', 'node_name': str(name)})
-            for node in nodes:
-                # node already exists
-                if name == node.name:
-                    node_status = node.status
-                    print('Node already exists: ' + str(name) + ' with status ' + str(node_status))
-                    result = 'node already exists'
-                    return jsonify({'result': result, 'node_status': node_status, 'node_name': str(name)})
-            # make new node
-            if result == 'unknown' and node_status == 'unknown':
-                n = client.containers.run(image = "alpine", command='/bin/sh', detach=True, tty=True, name=str(name), network=pod.name)
-                nodes.append(Node(name, n.id, pod_name))
-                result = 'node_added'
-                node_status = 'New'
-                print('Successfully added a new node: ' + str(name) + 'to pod' + str(pod_name))
-            return jsonify({'result': result, 'node_status': node_status, 'node_name': str(name)})
+            # if node exists
+            node_to_remove = client.containers.get(name)
+            for i in range(len(nodes)):
+                if name == nodes[i].name and pod_name == nodes[i].pod_name:
+                    # remove if status is new
+                    if nodes[i].status == 'New':
+                        node_to_remove.stop()
+                        node_to_remove.remove() 
+                        result = 'successfully removed node: ' + str(name) + 'from pod' + str(pod_name)
+                        # remove the node from list of nodes as well
+                        del nodes[i]
+                        return jsonify({'result': result})
+                    elif nodes[i].status == 'Online':
+                        node_to_remove.stop()
+                        node_to_remove.remove()
+                        del nodes[i]
+                        result = 'successfully removed node: ' + str(name) + 'from pod' + str(pod_name)
+                        return jsonify({'result': result})
+            result = 'node ' + str(name) + ' was not instantiated for this cloud.'
+            return jsonify({'result': result})
         except docker.errors.NotFound:
-            # pod doesn't exist - can't create node
-            result = str(pod_name) + " not found"
-            return jsonify({'result': result, 'node_status': 'not created', 'node_name': str(name)})
+            # node doesn't exist - can't delete
+            result = str(name) + ' not found'
+            return jsonify({'result': result})
+        
+@app.route('/cloud/pods/launch')
+def launch():
+    for node in nodes:
+        if node.status == 'New':
+            [img, logs] = client.images.build(path='/home/comp598-user/heavy/', rm=True, dockerfile='/home/comp598-user/heavy/Dockerfile')
+            for container in client.container.list():
+                if container.name == node.name:
+                    container.remove(v=True, force=True)
+            port = 7035
+            taken = True
+            while(taken):
+                port = port + 1
+                taken = False
+                for i in range(len(nodes)):
+                    if nodes[i].port == port:
+                        taken = True  
+            client.containers.run(image=img,
+                                  detach=True,
+                                  name=node.name,
+                                  command=['python','app.py',node.name],
+                                  ports={'5000/tcp': port})
+            node.status = 'Online'
+            node.port = port
+            return jsonify({'response': 'success',
+                            'name': node.name,
+                            'port': node.port})
 
+    return jsonify({'response': 'failure',
+                    'reason': 'No node available'})
+       
 #TODO: Joshua
 @app.route('/cloudproxy/nodes/rm/<name>')   
 def cloud_node_rm(name):
@@ -168,16 +197,17 @@ def cloud_node_rm(name):
 
 #------------------------MONITORING-------------------------
 
-#TODO: Joshua
-@app.route('/cloudproxy/nodes/<pod_id>')
-def cloud_node_ls(pod_id):
+@app.route('/cloudproxy/nodes')
+def cloud_node_ls():
     result = []
     for node in nodes:
-    # name, ID and status must be printed to stdout
-    # currently only accomodates one resource pod -- need to change for future cluster
         n = {'node_name':node.name, 'node_id':node.id, 'status':node.status}
         result.append(n)
     return jsonify(result)
+
+@app.route('/cloudproxy/pod/requests')
+def cloud_pod_requests_ls():
+    return jsonify(requests)
 
 #------------------------MONITORING-------------------------
 

@@ -7,30 +7,28 @@ app = Flask(__name__, template_folder='templates')
 
 @app.route('/cloudmonitor/dashboard/')
 def cloud_dashboard():
-
-    # display style:
-    # node_name | node_status | node_log
-    response = requests.get(monitor_url + '/cloudmonitor/nodes/all')
+    # shows a live representation of the incoming requests for each pod.
+    # pod_name || timestamp | request
+    response = requests.get(monitor_url + '/cloudmonitor/pods/all')
     response_json = response.json()
-    nodes = []
+    pods = []
     for data in response_json:
         d = {}
         for key, value in data.items():
             d[key] = value
             print (key, value)
-        nodes.append(d)
+        pods.append(d)
 
-    logs = []
-    for node in nodes:
-        response = requests.get(monitor_url + '/cloudmonitor/nodes/log/' + node['node_id'])
+    requests = []
+    for pod in pods:
+        response = requests.get(monitor_url + '/cloudmonitor/pods/requests/' + pod['pod_name'])
         response_json = response.json()
-        log = json.dumps(response_json)
-        logs.append(log)
+        req = json.dumps(response_json)
+        requests.append(req)
 
-    nodes_with_logs = zip(nodes, logs)
+    pods_with_reqs = zip(pods, requests)
 
-    #return render_template("index.html", nodes = nodes, logs = logs)
-    return render_template("index.html", nodes_with_logs = nodes_with_logs)
+    return render_template("index.html", pods_with_reqs = pods_with_reqs)
 
 if __name__ == '__main__':
     app.run(use_reloader = True, debug=True, host='0.0.0.0', port=3000)
