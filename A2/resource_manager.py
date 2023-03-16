@@ -274,8 +274,8 @@ def launch(pod_id):
             name = response_dictionary['name']
             online = response_dictionary['online']
             print('port: ' + port)
-            if running: #TODO
-                command1 = "echo 'experimental-mode on; add server light-servers/'" + name + ' ' + ip_proxy[7:-5] + ':' + port + '| sudo socat stdio /run/haproxy/admin.sock' #TODO
+            if online: #TODO
+                command1 = "echo 'experimental-mode on; add server light-servers/'" + name + ' ' + pod_URL[7:-5] + ':' + port + '| sudo socat stdio /run/haproxy/admin.sock' #TODO
                 subprocess.run(command1, shell=True, check=True)
                 
                 command2 = "echo 'experimental-mode on; set server light-servers/'" + name + ' state ready ' + '| sudo socat stdio /run/haproxy/admin.sock'
