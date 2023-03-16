@@ -101,7 +101,7 @@ def cloud_node(name, pod_name):
             result = str(pod_name) + " not found"
             return jsonify({'result': result, 'node_status': 'not created', 'node_name': str(name)})
 
-@app.route('/cloudproxy/node/rm/<name>/<pod_name>', methods=['GET'])   
+@app.route('/cloudproxy/node/remove/<name>/<pod_name>', methods=['GET'])   
 def cloud_pod_node_rm(name, pod_name):
     if request.method == 'GET':
         print('Request to remove node: ' + str(name) + 'from pod' + str(pod_name))
