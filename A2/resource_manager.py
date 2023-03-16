@@ -148,7 +148,6 @@ def remove_node(name, pod_id):
 
 @app.route('/cloud/pods/resume/<pod_id>')
 def cloud_resume(pod_id):
-    
     found = False
     pod_name = ""
     for pod in pods:
@@ -183,7 +182,6 @@ def cloud_resume(pod_id):
          
 @app.route('/cloud/pods/pause/<pod_id>')
 def cloud_pause(pod_id):
-    
     found = False
     pod_name = ""
     for pod in pods:
@@ -232,7 +230,6 @@ def launch(pod_id):
 #     You run the cloud launch JOB and it puts the state of the node as ONLINE and starts the web server. 
 #     Also, the cloud launch informs the load balancer about the new node. 
 #     After this point the load balancer has the new node available for taking workload requests.
-#     don't need to pass the pod id when calling the proxy
 
     pod_name = ""
     for pod in pods:
@@ -260,8 +257,8 @@ def launch(pod_id):
             name = response_dictionary['name']
             online = response_dictionary['online']
             print('port: ' + port)
-            if online: #TODO
-                command1 = "echo 'experimental-mode on; add server light-servers/'" + name + ' ' + pod_URL[7:-5] + ':' + port + '| sudo socat stdio /run/haproxy/admin.sock' #TODO
+            if online:
+                command1 = "echo 'experimental-mode on; add server light-servers/'" + name + ' ' + pod_URL[7:-5] + ':' + port + '| sudo socat stdio /run/haproxy/admin.sock'
                 subprocess.run(command1, shell=True, check=True)
                 
                 command2 = "echo 'experimental-mode on; set server light-servers/'" + name + ' state ready ' + '| sudo socat stdio /run/haproxy/admin.sock'

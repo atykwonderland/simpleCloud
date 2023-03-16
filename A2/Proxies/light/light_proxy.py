@@ -69,7 +69,6 @@ def cloud_init():
                     'id': id,
                     'name': 'light_pod'})
 
-#TODO: Hana
 @app.route('/cloud/nodes/<name>/<pod_name>') 
 def cloud_node(name, pod_name):
     print('Request to register new node: ' + str(name) + ' in pod ' + str(pod_name))
@@ -79,7 +78,7 @@ def cloud_node(name, pod_name):
         result = 'unknown'
         node_status = 'unknown'
         # check if the limit of the pod has been met
-        if node.size() >= 20:
+        if node.size() >= MAX_LIGHT_NODES:
             print('Pod' + str(pod_name) + 'is already at its maximum resource capacity')
             result = 'pod at maximum reasource capacity'
             return jsonify({'result': result, 'node_status': 'not created', 'node_name': str(name)})
@@ -103,7 +102,6 @@ def cloud_node(name, pod_name):
         result = str(pod_name) + " not found"
         return jsonify({'result': result, 'node_status': 'not created', 'node_name': str(name)})
 
-#TODO: Hana
 @app.route('/cloud/nodes/rm/<name>/<pod_name>')   
 def cloud_pod_node_rm(name, pod_name):
     print('Request to remove node: ' + str(name) + 'from pod' + str(pod_name))
@@ -164,7 +162,6 @@ def launch():
                     'reason': 'No node available'})
 
 
-#TODO: Joshua
 @app.route('/cloudproxy/nodes/rm/<name>')   
 def cloud_node_rm(name):
     print('Request to remove node: ' + str(name))
