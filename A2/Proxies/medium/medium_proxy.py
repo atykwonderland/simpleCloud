@@ -163,7 +163,8 @@ def launch():
             node.port = port
             return jsonify({'response': 'success',
                             'name': node.name,
-                            'port': node.port})
+                            'port': node.port}, 
+                            'Online': True)
 
     return jsonify({'response': 'failure',
                     'reason': 'No node available'})
