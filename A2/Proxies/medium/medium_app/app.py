@@ -19,8 +19,6 @@ def medium():
     rows, cols = img.shape
     M = np.float32([[1, 0, 100], [0, 1, 50]])
     dst = cv.warpAffine(img, M, (cols, rows))
-    cv.imshow('img', dst)
-    cv.destroyAllWindows()
     time.sleep(10)
     return 'Image transformed \n'
 
