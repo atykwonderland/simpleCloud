@@ -2,6 +2,9 @@ from flask import Flask, jsonify
 import sys
 import random
 import string
+import numpy as np
+import cv2 as cv
+import time
 
 app = Flask(__name__)
 
@@ -11,9 +14,15 @@ app = Flask(__name__)
 def medium():
     if len(sys.argv) < 2:
         return 'something went wrong!'
-    letters = string.ascii_letters
-    rand_string = ''.join(random.choice(letters) for i in range(10))
-    return 'Hello ' + rand_string + ' from: ' + sys.argv[1] + '! \n'
+    
+    img = cv.imread('Image.jpg', 0)
+    rows, cols = img.shape
+    M = np.float32([[1, 0, 100], [0, 1, 50]])
+    dst = cv.warpAffine(img, M, (cols, rows))
+    cv.imshow('img', dst)
+    cv.destroyAllWindows()
+    time.sleep(10)
+    return 'Image transformed \n'
 
 if __name__ == '__main__':
     app.run(debug = True, host='0.0.0.0', port=8000)
