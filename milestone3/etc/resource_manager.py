@@ -307,6 +307,27 @@ def cloud_pod_ls():
 
 #------------------------MONITORING-------------------------
 
+#------------------------ELASTICITY-------------------------
+
+#TODO
+@app.route('/cloud/elasticity/lower/<pod_name>/<value>')
+def cloud_elasticity_lower():
+    pass
+
+@app.route('/cloud/elasticity/upper/<pod_name>/<value>')
+def cloud_elasticity_upper():
+    pass
+
+@app.route('/cloud/elasticity/enable/<pod_name>/<lower>/<upper>')
+def cloud_elasticity_enable():
+    pass
+
+@app.route('/cloud/elasticity/lower/<pod_name>')
+def cloud_elasticity_disable():
+    pass
+
+#------------------------ELASTICITY-------------------------
+
 #------------------------UNSUPPORTED-------------------------
 
 @app.route('/cloud/pod/register/<name>')
