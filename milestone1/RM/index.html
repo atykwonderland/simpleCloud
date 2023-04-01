@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+  
+<html>
+<head>
+    <title>Cloud Monitoring Dashboard</title>
+    <meta http-equiv="refresh" content="10">
+</head>
+  
+<!-- Adding some style to table (OPTIONAL) -->
+<style type="text/css">
+    th:tr{
+        color: blue;
+  
+    }
+    tr:nth-of-type(2n){
+        border: 1px solid black;
+        background-color: rgba(150, 150, 150, 0.5);
+    }
+    td{
+        padding: 8px 8px;
+        border: 1px solid black;
+    }
+</style>
+  
+<body>
+  
+<table style="margin-left: 20px;">
+<!-- Table headers -->
+    <th>
+        <tr style="font-weight: bold;">    
+        <td>Node Name</td>
+        <td>Node Status</td>
+        <td>Node Log</td>
+</tr>
+    </th>
+      
+<!-- For loop logic of jinja template -->
+{%for node, log in nodes_with_logs%}
+  
+<!-- table rows -->
+<tr>
+    <td>{{node.node_name}}</td>
+    <td>{{node.status}}</td>
+    <td>{{log}}</td>
+{%endfor%}
+  
+</tr>
+  
+</table>
+  
+  
+</body>
+</html>
