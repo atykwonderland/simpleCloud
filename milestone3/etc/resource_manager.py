@@ -17,6 +17,8 @@ light_requests = []
 medium_requests = []
 heavy_requests = []
 
+isElastic = False
+
 cURL = pycurl.Curl()
 app = Flask(__name__)
 
