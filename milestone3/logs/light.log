@@ -1,2 +1,0 @@
-# pxname,svname,status,req_rate,req_rate_max,qtime,ctime,rtime,addr,algo
-light-servers,BACKEND,UP,,,0,0,0,,roundrobin
