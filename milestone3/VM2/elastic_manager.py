@@ -5,10 +5,22 @@ import json
 import subprocess
 from io import BytesIO
 import datetime
+from multiprocessing import Process
 
 light_proxy = 'http://10.140.17.109:6001'
 medium_proxy = 'http://10.140.17.109:6002'
 heavy_proxy = 'http://10.140.17.109:6003'
+
+thresholds = {
+    'light_pod': {'upper':None, 'lower':None},
+    'medium_pod': {'upper':None, 'lower':None},
+    'heavy_pod': {'upper':None, 'lower':None}
+}
+pod_limits = {
+    'light_pod': {'upper':None, 'lower':None},
+    'medium_pod': {'upper':None, 'lower':None},
+    'heavy_pod': {'upper':None, 'lower':None}
+}
 
 cURL = pycurl.Curl()
 app = Flask(__name__)
@@ -27,6 +39,12 @@ def cloud_elasticity_enable(pod_name, lower, upper):
     if pod_name == "light_pod" or pod_name == "medium_pod" or pod_name == "heavy_pod":
         pod_limits[pod_name]['upper'] = upper
         pod_limits[pod_name]['lower'] = lower
+        pod_task = pod_name + '_task'
+        pod['isElastic'] == true:
+        task = Process(target=pod_task, args=(thresholds[pod_name]['lower'], thresholds[pod_name]['upper']))
+        task.start()
+        return jsonify({'response': 'success',
+                        'reason': 'elastic manager enabled for pod' + pod_name})
     else:
         return jsonify({'response': 'failure',
                         'reason': 'unknown pod'})
