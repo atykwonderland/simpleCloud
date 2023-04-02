@@ -348,10 +348,10 @@ def cloud_elasticity_enable(pod_name, lower, upper):
                 if node['status'] == 'Online':
                     counter += 1
                     if counter > upper:
-                        remove_node(pod_name, pod['id'])
+                        remove_node(pod_name, node['node_id'])
             while(counter < lower):
                 # TODO: generate node names
-                register_node(name, pod['id'])
+                register_node(name, node['node_id'])
             pod['isElastic'] = true      
      if found == False:
         return jsonify({'response': 'failure',
