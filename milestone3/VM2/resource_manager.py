@@ -327,15 +327,8 @@ def cloud_elasticity_upper(pod_name, value):
         return jsonify({'response': 'failure',
                         'reason': 'pod not found'})
 
-    if pod_name == "light_pod":
-        pod_URL = light_proxy
-    elif pod_name == "medium_pod":
-        pod_URL = medium_proxy
-    elif pod_name == "heavy_pod":
-        pod_URL = heavy_proxy
-
-    # 3. tell proxy new threshold +  to adjust nodes to fit threshold
-    cURL.setopt(cURL.URL, pod_URL + '/cloudproxy/elasticity/upper/' + str(pod_name) + '/' + str(value))
+    # 3. tell EM new threshold +  to adjust nodes to fit threshold
+    cURL.setopt(cURL.URL, 'http://10.140.17.108:5000/cloudelastic/elasticity/upper/' + str(pod_name) + '/' + str(value))
     buffer = bytearray()
 
     cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
