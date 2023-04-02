@@ -15,6 +15,11 @@ thresholds = {
     'medium_pod': {'upper':None, 'lower':None},
     'heavy_pod': {'upper':None, 'lower':None}
 }
+pod_limits = {
+    'light_pod': {'upper':None, 'lower':None},
+    'medium_pod': {'upper':None, 'lower':None},
+    'heavy_pod': {'upper':None, 'lower':None}
+}
 
 cURL = pycurl.Curl()
 app = Flask(__name__)
@@ -32,6 +37,7 @@ def cloud_elasticity_upper(pod_name, value):
     else:
         return jsonify({'response': 'failure',
                         'reason': 'unknown pod'})
+    
     # trigger thread to refresh?
 
     return jsonify({'response': 'success',
