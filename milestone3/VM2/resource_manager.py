@@ -350,14 +350,29 @@ def cloud_elasticity_enable(pod_name, lower, upper):
                     if counter > upper:
                         remove_node(pod_name, node['node_id'])
             while(counter < lower):
-                # TODO: generate node names
+                name = 'node_' + str(counter)
                 register_node(name, node['node_id'])
-            pod['isElastic'] = true      
-     if found == False:
-        return jsonify({'response': 'failure',
-                        'reason': 'pod not found'})
-     return jsonify({'response': 'success',
-                    'reason': 'successfully enabled elasticity for pod ' + pod_name})
+                counter += 1
+            cURL.setopt(cURL.URL,  pod_URL + '/cloudelastic/elasticity/enable/' + pod_name + '/' + str(lower) + '/' + str(upper))
+            buffer = bytearray()
+            cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
+            cURL.perform()
+    
+            if cURL.getinfo(cURL.RESPONSE_CODE) == 200:
+                response_dictionary = json.loads(buffer.decode())
+                response = response_dictionary['response']
+                if response == 'success':
+                    pod['isElastic'] = true 
+                    return jsonify({'response': 'success',
+                                    'reason': 'successfully enabled elasticity for pod ' + pod_name})
+                else:
+                    return jsonify({'response': 'failure',
+                                    'reason': 'elastic manager failure'})    
+            if found == False:
+                return jsonify({'response': 'failure',
+                                'reason': 'pod not found'})
+     return jsonify({'response': 'failure',
+                    'reason': 'unknown'})
    
 
 @app.route('/cloud/elasticity/disable/<pod_name>')
