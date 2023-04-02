@@ -328,6 +328,20 @@ def cloud_elasticity_enable():
 def cloud_elasticity_disable():
     pass
 
+
+@app.route('/elasticity/lower_threshold/<name>/<value>')
+def cloud elasticity lower_threshold(name, value):
+    # need to have a global variable that stores the lower values of all of the pods
+    lower_values[name] = value
+    cpu_usage = docker.stats(name) # need to fix this ... can docker.stats() take a name argument? 
+    # remove a node by setting it to "NEW"
+    while cpu_usage < value:
+        for node in response_json:
+            if node['status'] == "Online" and cpu_usage < value:
+                command = "echo 'experimental-mode on; set server " + server_type +"/"+ node['node_name'] + " state maint' | sudo socat stdio /run/haproxy/admin.sock" 
+                subprocess.run(command, shell=True, check=True)
+                node['status'] == "NEW"
+
 #------------------------ELASTICITY-------------------------
 
 #------------------------UNSUPPORTED-------------------------
