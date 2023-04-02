@@ -23,10 +23,10 @@ def cloud_elasticity_upper():
     pass
 
 @app.route('/cloudelastic/elasticity/enable/<pod_name>/<lower>/<upper>')
-def cloud_elasticity_enable():
-    pass
+def cloud_elasticity_enable(pod_name, lower, upper):
+    
 
-@app.route('/cloudelastic/elasticity/lower/<pod_name>')
+@app.route('/cloudelastic/elasticity/disable/<pod_name>')
 def cloud_elasticity_disable():
     pass
 
