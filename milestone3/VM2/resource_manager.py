@@ -361,7 +361,7 @@ def cloud_elasticity_enable(pod_name, lower, upper):
    
 
 @app.route('/cloud/elasticity/disable/<pod_name>')
-def cloud_elasticity_disable():
+def cloud_elasticity_disable(pod_name):
     print('Request to disable elasticity for pod: '  + str(pod_name))
     for pod in pods:
         if pod['name'] == pod_name:
