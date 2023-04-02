@@ -5,10 +5,10 @@ import datetime
 import pandas as pd
 import subprocess
 
-light_proxy = 'http://10.140.17.108:6001'
-medium_proxy = 'http://10.140.17.107:6001'
-heavy_proxy = 'http://10.140.17.109:6001'
-manager = 'http://10.140.17.108:6002'
+light_proxy = 'http://10.140.17.109:6001'
+medium_proxy = 'http://10.140.17.109:6002'
+heavy_proxy = 'http://10.140.17.109:6003'
+manager = 'http://10.140.17.108:5000'
 
 app = Flask(__name__)
 
@@ -83,4 +83,4 @@ def cloud_log_pod(pod_name):
 #------------------------HAPROXY LOGGING-------------------------
     
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=6003)
+    app.run(debug=True, host='0.0.0.0', port=5001)

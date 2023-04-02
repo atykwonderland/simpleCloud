@@ -104,8 +104,8 @@ def cloud_log_pod(url, command):
 #-------------------------------------------------
 
 def main():
-    rmanager_url = 'http://10.140.17.108:6002'
-    rmonitor_url = 'http://10.140.17.108:6003'    
+    rmanager_url = 'http://10.140.17.108:5000'
+    rmonitor_url = 'http://10.140.17.108:5001'    
     while (1):
         command = input('$ ')
         #TOOLSET

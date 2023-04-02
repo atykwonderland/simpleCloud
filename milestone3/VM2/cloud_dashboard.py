@@ -2,7 +2,7 @@ from flask import Flask, render_template
 import requests
 import json
 
-monitor_url = 'http://10.140.17.108:6003'
+monitor_url = 'http://10.140.17.108:5001'
 app = Flask(__name__, template_folder='templates')
 
 @app.route('/cloudmonitor/dashboard')

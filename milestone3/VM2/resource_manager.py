@@ -6,9 +6,9 @@ import subprocess
 from io import BytesIO
 import datetime
 
-light_proxy = 'http://10.140.17.108:6001'
-medium_proxy = 'http://10.140.17.107:6001'
-heavy_proxy = 'http://10.140.17.109:6001'
+light_proxy = 'http://10.140.17.109:6001'
+medium_proxy = 'http://10.140.17.109:6002'
+heavy_proxy = 'http://10.140.17.109:6003'
 
 # {name, id}
 pods = []
@@ -347,4 +347,4 @@ def cloud_pod_rm(name):
 #------------------------UNSUPPORTED-------------------------
 
 if __name__ == '__main__':
-    app.run(debug=True, host= '0.0.0.0', port=6002)
+    app.run(debug=True, host= '0.0.0.0', port=5000)
