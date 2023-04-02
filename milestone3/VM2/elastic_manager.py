@@ -24,6 +24,13 @@ pod_limits = {
 cURL = pycurl.Curl()
 app = Flask(__name__)
 
+
+#------------------------TARGETS-------------------------
+
+#------------------------TARGETS-------------------------
+
+#------------------------ENDPOINTS-------------------------
+
 #TODO
 @app.route('/cloudelastic/elasticity/lower/<pod_name>/<value>')
 def cloud_elasticity_lower():
@@ -50,6 +57,8 @@ def cloud_elasticity_enable():
 @app.route('/cloudelastic/elasticity/lower/<pod_name>')
 def cloud_elasticity_disable():
     pass
+
+#------------------------ENDPOINTS-------------------------
 
 if __name__ == '__main__':
     app.run(debug=True, host= '0.0.0.0', port=5002)
