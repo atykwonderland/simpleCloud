@@ -192,8 +192,8 @@ def compute_usage():
     try:
         containers_list = client.networks.get('light_pod').containers
         num_containers = len(containers_list)
-        for containers in containers_list:            
-            cpu_usage += containers.stats() / num_containers
+        for container in containers_list:            
+            cpu_usage += container.stats() / num_containers
     except:
         return jsonify({'response': 'failure', 'value':none})                                         
 
