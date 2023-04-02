@@ -313,8 +313,38 @@ def cloud_pod_ls():
 
 #TODO
 @app.route('/cloud/elasticity/lower/<pod_name>/<value>')
-def cloud_elasticity_lower():
-    pass
+def cloud_elasticity_lower(pod_name, value):
+    found = False
+    for pod in pods:
+        if pod['name'] == pod_name:
+            found = True
+            # 1. check if elasticity enabled
+            if pod['isElastic']:
+                # 2. set threshold value in pods list
+                pod['lower'] = value
+            else:
+                return jsonify({'response': 'failure',
+                                'reason': 'elasticity is not enabled for pod: ' + str(pod_name)})
+    if found == False:
+        return jsonify({'response': 'failure',
+                        'reason': 'pod not found'})
+
+    # 3. tell EM new threshold +  to adjust nodes to fit threshold
+    cURL.setopt(cURL.URL, 'http://10.140.17.108:5000/cloudelastic/elasticity/lower/' + str(pod_name) + '/' + str(value))
+    buffer = bytearray()
+
+    cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
+    cURL.perform()
+
+    if cURL.getinfo(cURL.RESPONSE_CODE) == 200:
+        response_dictionary = json.loads(buffer.decode())
+        response = response_dictionary['response']
+        if response == 'success':
+            return jsonify({'response': 'success',
+                    'reason': 'lower threshold set to: ' + str(value)}) 
+    
+    return jsonify({'response': 'failure',
+                    'reason': 'Unknown'})
 
 @app.route('/cloud/elasticity/upper/<pod_name>/<value>')
 def cloud_elasticity_upper():
@@ -333,6 +363,7 @@ def cloud_elasticity_disable():
 def cloud elasticity lower_threshold(name, value):
     pass
 #------------------------ELASTICITY-------------------------
+
 
 #------------------------UNSUPPORTED-------------------------
 
