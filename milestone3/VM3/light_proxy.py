@@ -182,22 +182,24 @@ def launch():
 
 #------------------------ELASTICITY-------------------------
 
-#TODO
-@app.route('/cloudproxy/elasticity/lower/<pod_name>/<value>')
-def cloud_elasticity_lower():
-    pass
+@app.route('/cloudproxy/compute_usage')
+def compute_usage():
+    cpu_usage = 0
+    try:
+        containers_list = client.networks.get('light_pod').containers
+        num_containers = len(containers_list)
+        for container in containers_list:            
+            cpu_info = container.stats()
+            
+            cpu_delta = cpu_info['cpu_stats']['cpu_usage']['total_usage'] - cpu_info['precpu_stats']['cpu_usage']['total_usage']
+            system_cpu_delta = cpu_info['cpu_stats']['system_cpu_usage'] - cpu_info['precpu_stats']['system_cpu_usage']
+            number_cpus = length(cpu_info['cpu_stats']['cpu_usage']['percpu_usage'])
+            cpu_usage += ((cpu_delta / system_cpu_delta) * number_cpus * 100.0) / len(nodes)
+            
+    except:
+        return jsonify({'response': 'failure', 'value':none})                                         
 
-@app.route('/cloudproxy/elasticity/upper/<pod_name>/<value>')
-def cloud_elasticity_upper():
-    pass
-
-@app.route('/cloudproxy/elasticity/enable/<pod_name>/<lower>/<upper>')
-def cloud_elasticity_enable():
-    pass
-
-@app.route('/cloudproxy/elasticity/lower/<pod_name>')
-def cloud_elasticity_disable():
-    pass
+    return jsonify({'response':'success', 'value':cpu_usage})                                         
 
 #------------------------ELASTICITY-------------------------
 
