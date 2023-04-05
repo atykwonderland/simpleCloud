@@ -21,11 +21,6 @@ pod_limits = {
     'medium_pod': {'upper':None, 'lower':None},
     'heavy_pod': {'upper':None, 'lower':None}
 }
-isElastic = {
-    'light_pod': None
-    'medium_pod': None
-    'heavy_pod': None
-}
 processes = {
     'light_pod': None
     'medium_pod': None
@@ -45,17 +40,17 @@ def cloud_elasticity_upper():
     pass
 
 def light_pod_task():
-    while(isElastic['light_pod'] == true):
+    while(true):
         manage_light()
         time.sleep(5)
         
 def medium_pod_task():
-    while(isElastic['medium_pod'] == true):
+    while(true):
         manage_medium()
         time.sleep(5)
         
 def heavy_pod_task():
-    while(isElastic['heavy_pod'] == true):
+    while(true):
         manage_heavy()
         time.sleep(5)
         
@@ -64,7 +59,6 @@ def cloud_elasticity_enable(pod_name, lower, upper):
     if pod_name == "light_pod":
         pod_limits['light_pod']['upper'] = upper
         pod_limits['light_pod']['lower'] = lower
-        isElastic['light_pod'] = true
         task = Process(target=light_pod_task)
         processes['light_pod'] = task
         task.start()
@@ -73,7 +67,6 @@ def cloud_elasticity_enable(pod_name, lower, upper):
     elif pod_name == "medium_pod":
         pod_limits['medium_pod']['upper'] = upper
         pod_limits['medium_pod']['lower'] = lower
-        isElastic['medium_pod'] = true
         task = Process(target=medium_pod_task)
         processes['medium_pod'] = task
         task.start()
@@ -82,7 +75,6 @@ def cloud_elasticity_enable(pod_name, lower, upper):
     elif pod_name == "heavy_pod":
         pod_limits['heavy_pod']['upper'] = upper
         pod_limits['heavy_pod']['lower'] = lower
-        isElastic['heavy_pod'] = true
         task = Process(target=heavy_pod_task)
         processes['heavy_pod'] = task
         task.start()
@@ -97,7 +89,6 @@ def cloud_elasticity_enable(pod_name, lower, upper):
 def cloud_elasticity_disable(pod_name):
     print('Request to disable elasticity for pod: '  + str(pod_name))
     if pod_name == "light_pod" or pod_name == "medium_pod" or pod_name == "heavy_pod":
-        isElastic[pod_name] = false
         process = processes[pod_name]
         process.kill()
         return jsonify({'response': 'success',
