@@ -123,9 +123,9 @@ def manage_proxy_elasticity(pod_name, conn):
                     cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
                     cURL.perform()
                     
-                    node['status'] == "NEW"
+                    node['status'] == "New"
                     
-                elif node['status'] == "Online" and cpu_usage > value:
+                elif cpu_usage > value:
                     # need to call the proxy to turn the nodes on and off. 
                     # to add more nodes, call register and then launch, to remove then you can call remove
 
@@ -133,7 +133,7 @@ def manage_proxy_elasticity(pod_name, conn):
                     cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
                     cURL.perform()
                     
-                    node['status'] == "ONLINE"
+                    node['status'] == "Online"
                     
                 cpu_usage = compute_usage()   # re-compute the usage, since it will have changed
             except:
