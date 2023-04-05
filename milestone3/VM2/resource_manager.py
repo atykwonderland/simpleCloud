@@ -386,25 +386,9 @@ def cloud_elasticity_enable(pod_name, lower, upper):
     for pod in pods:
         if pod['name'] == pod_name: 
             found = True
-            if pod_name == "light_pod":
-                pod_URL = light_proxy
-            elif pod_name == "medium_pod":
-                pod_URL = medium_proxy
-            elif pod_name == "heavy_pod":
-                pod_URL = heavy_proxy
-            # get the nodes associated with the pod
-            response = requests.get(pod_URL + '/cloudproxy/nodes')
-            nodes = response.json()
-            counter = 0
-            for node in nodes:
-                if node['status'] == 'Online':
-                    counter += 1
-                    if counter > upper:
-                        remove_node(pod_name, node['node_id'])
-            while(counter < lower):
-                name = 'node_' + str(counter)
-                register_node(name, node['node_id'])
-                counter += 1
+            if pod['isElastic'] == true:
+                return jsonify({'response': 'failure',
+                                    'reason': 'elasticity already enabled for pod ' + pod_name})
             cURL.setopt(cURL.URL,  pod_URL + '/cloudelastic/elasticity/enable/' + pod_name + '/' + str(lower) + '/' + str(upper))
             buffer = bytearray()
             cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
