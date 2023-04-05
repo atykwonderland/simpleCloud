@@ -79,7 +79,7 @@ def register_node(name, pod_id):
     for pod in pods:
         if pod['id'] == pod_id:
             pod_name = pod['name']
-            if pod['isElastic'] == true:
+            if pod['isElastic'] == True:
                 return jsonify({'response': 'failure',
                                 'reason': 'pos is in elastic mode'})
             found = True
@@ -171,7 +171,7 @@ def launch(pod_id):
     for pod in pods:
         if pod['id'] == pod_id: 
             pod_name = pod['name']
-            if pod['isElastic'] == true:
+            if pod['isElastic'] == True:
                 return jsonify({'response': 'failure',
                                 'reason': 'pos is in elastic mode'})
     
@@ -311,7 +311,6 @@ def cloud_pod_ls():
 
 #------------------------ELASTICITY-------------------------
 
-#TODO
 @app.route('/cloud/elasticity/lower/<pod_name>/<value>')
 def cloud_elasticity_lower(pod_name, value):
     found = False
@@ -383,19 +382,16 @@ def cloud_elasticity_upper(pod_name, value):
 @app.route('/cloud/elasticity/enable/<pod_name>/<lower>/<upper>')
 def cloud_elasticity_enable(pod_name, lower, upper):
     print('Request to enable elasticity for pod: '  + str(pod_name))
-    found = false
+    found = False
     for pod in pods:
         if pod['name'] == pod_name: 
-            found = true
+            found = True
             if pod_name == "light_pod":
                 pod_URL = light_proxy
-                server_type = "light-servers"
             elif pod_name == "medium_pod":
                 pod_URL = medium_proxy
-                server_type = "medium-servers"
             elif pod_name == "heavy_pod":
                 pod_URL = heavy_proxy
-                server_type = "heavy-servers"
             # get the nodes associated with the pod
             response = requests.get(pod_URL + '/cloudproxy/nodes')
             nodes = response.json()
@@ -427,7 +423,7 @@ def cloud_elasticity_enable(pod_name, lower, upper):
             if found == False:
                 return jsonify({'response': 'failure',
                                 'reason': 'pod not found'})
-     return jsonify({'response': 'failure',
+    return jsonify({'response': 'failure',
                     'reason': 'unknown'})
    
 
@@ -442,10 +438,6 @@ def cloud_elasticity_disable(pod_name):
     return jsonify({'response': 'failure',
                         'reason': 'pod not found'})
 
-
-@app.route('/elasticity/lower_threshold/<name>/<value>')
-def cloud elasticity lower_threshold(name, value):
-    pass
 #------------------------ELASTICITY-------------------------
 
 
