@@ -198,7 +198,7 @@ def compute_usage():
             cpu_delta = cpu_info['cpu_stats']['cpu_usage']['total_usage'] - cpu_info['precpu_stats']['cpu_usage']['total_usage']
             system_cpu_delta = cpu_info['cpu_stats']['system_cpu_usage'] - cpu_info['precpu_stats']['system_cpu_usage']
             number_cpus = length(cpu_info['cpu_stats']['cpu_usage']['percpu_usage'])
-            cpu_usage += (cpu_delta / system_cpu_delta) * number_cpus * 100.0
+            cpu_usage += ((cpu_delta / system_cpu_delta) * number_cpus * 100.0) / len(nodes)
             
     except:
         return jsonify({'response': 'failure', 'value':none})                                         
