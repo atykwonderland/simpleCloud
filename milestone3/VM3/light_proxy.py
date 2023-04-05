@@ -182,10 +182,6 @@ def launch():
 
 #------------------------ELASTICITY-------------------------
 
-# put this in the initialization of the pod:
-#lower_threshold = 0
-#upper_threshold = 0
-
 @app.route('/cloudproxy/compute_usage')
 def compute_usage():
     cpu_usage = 0
@@ -205,23 +201,7 @@ def compute_usage():
 
     return jsonify({'response':'success', 'value':cpu_usage})                                         
 
-
-@app.route('/cloudproxy/elasticity/upper/<pod_name>/<value>')
-def cloud_elasticity_upper():
-    pass
-
-@app.route('/cloudproxy/elasticity/enable/<pod_name>/<lower>/<upper>')
-def cloud_elasticity_enable():
-    pass
-
-@app.route('/cloudproxy/elasticity/lower/<pod_name>')
-def cloud_elasticity_disable():
-    pass
-
-    
-
 #------------------------ELASTICITY-------------------------
-
 
 #------------------------MONITORING-------------------------
 

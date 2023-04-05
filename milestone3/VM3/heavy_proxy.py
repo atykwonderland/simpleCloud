@@ -178,6 +178,27 @@ def launch():
 
 #------------------------TOOLSET-------------------------
 
+#------------------------ELASTICITY-------------------------
+
+#TODO
+@app.route('/cloudproxy/elasticity/lower/<pod_name>/<value>')
+def cloud_elasticity_lower():
+    pass
+
+@app.route('/cloudproxy/elasticity/upper/<pod_name>/<value>')
+def cloud_elasticity_upper():
+    pass
+
+@app.route('/cloudproxy/elasticity/enable/<pod_name>/<lower>/<upper>')
+def cloud_elasticity_enable():
+    pass
+
+@app.route('/cloudproxy/elasticity/lower/<pod_name>')
+def cloud_elasticity_disable():
+    pass
+
+#------------------------ELASTICITY-------------------------
+
 #------------------------MONITORING-------------------------
 
 @app.route('/cloudproxy/nodes')
