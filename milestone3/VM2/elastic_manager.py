@@ -129,27 +129,11 @@ def manage_proxy_elasticity(pod_name):
         
 @app.route('/cloudelastic/elasticity/enable/<pod_name>/<lower>/<upper>')
 def cloud_elasticity_enable(pod_name, lower, upper):
-    if pod_name == "light_pod":
-        pod_limits['light_pod']['upper'] = upper
-        pod_limits['light_pod']['lower'] = lower
-        task = Process(target=manage_proxy_elasticity,  args=(pod_name,))
-        processes['light_pod'] = task
-        task.start()
-        return jsonify({'response': 'success',
-                        'reason': 'elastic manager enabled for pod' + pod_name})
-    elif pod_name == "medium_pod":
-        pod_limits['medium_pod']['upper'] = upper
-        pod_limits['medium_pod']['lower'] = lower
-        task = Process(target=manage_proxy_elasticity,  args=(pod_name,))
-        processes['medium_pod'] = task
-        task.start()
-        return jsonify({'response': 'success',
-                        'reason': 'elastic manager enabled for pod' + pod_name})
-    elif pod_name == "heavy_pod":
-        pod_limits['heavy_pod']['upper'] = upper
-        pod_limits['heavy_pod']['lower'] = lower
-        task = Process(target=manage_proxy_elasticity,  args=(pod_name,))
-        processes['heavy_pod'] = task
+    if pod_name == 'light_pod' or pod_name == 'medium_pod' or pod_name == 'heavy_pod':
+        pod_limits[pod_name]['upper'] = upper
+        pod_limits[[pod_name]['lower'] = lower
+        task = Process(target=manage_proxy_elasticity,  args=(pod_name))
+        processes[pod_name] = task
         task.start()
         return jsonify({'response': 'success',
                         'reason': 'elastic manager enabled for pod' + pod_name})
