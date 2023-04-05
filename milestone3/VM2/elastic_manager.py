@@ -15,9 +15,6 @@ medium_proxy = 'http://10.140.17.109:6002'
 heavy_proxy = 'http://10.140.17.109:6003'
 
 
-connections = dict()
-multiprocessing.set_start_method('fork')
-
 thresholds = {
     'light_pod': {'upper':None, 'lower':None},
     'medium_pod': {'upper':None, 'lower':None},
@@ -95,28 +92,49 @@ def get_nodes(pod_name):
     cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
     cURL.perform()
     nodes = json.loads(buffer.decode())
-    nodes = usage['response']
+    nodes = nodes['response']
     
+def get_pod_id(pod_name):
+    buffer = bytearray()
+    cURL.setopt(cURL.URL,'/cloud/pods/all')
+    cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
+    cURL.perform()
+    pods = json.loads(buffer.decode())
+    pods = pods['response']
+    for pod in pods:
+        if pod['name'] == pod_name:
+            pod_id = pod['id']
+            break
 def manage_proxy_elasticity(pod_name, conn):
 
-    is_elastic = True
-
-    while(is_elastic):
-        # Check if there is a message from the parent process to stop.
-        try:
-            is_elastic = conn.recv()
-
+    while(True):
+       
         cpu_usage = compute_usage(pod_name)        
         nodes = get_nodes(pod_name)
+        pod_id = get_pod_id(pod_name)
         
         for node in nodes: # need to get a list of nodes
             try:
                 if node['status'] == "Online" and cpu_usage < value:
                     # need to call the proxy to turn the nodes on and off. 
                     # to add more nodes, call register and then launch, to remove then you can call remove
-                    command = "echo 'experimental-mode on; set server " + server_type +"/"+ node['node_name'] + " state maint' | sudo socat stdio /run/haproxy/admin.sock" 
-                    subprocess.run(command, shell=True, check=True)
+                    
+                    cURL.setopt(cURL.URL,'/cloud/node/remove/'+name['node_name']+'/'+pod_id)
+                    cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
+                    cURL.perform()
+                    
                     node['status'] == "NEW"
+                    
+                elif node['status'] == "Online" and cpu_usage > value:
+                    # need to call the proxy to turn the nodes on and off. 
+                    # to add more nodes, call register and then launch, to remove then you can call remove
+
+                    cURL.setopt(cURL.URL,'/cloud/node/register/'+name['node_name']+'/'+pod_id)
+                    cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
+                    cURL.perform()
+                    
+                    node['status'] == "ONLINE"
+                    
                 cpu_usage = compute_usage()   # re-compute the usage, since it will have changed
             except:
                 continue
