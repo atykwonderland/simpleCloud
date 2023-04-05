@@ -105,7 +105,7 @@ def get_pod_id(pod_name):
         if pod['name'] == pod_name:
             pod_id = pod['id']
             break
-def manage_proxy_elasticity(pod_name, conn):
+def manage_proxy_elasticity(pod_name):
 
     while(True):
        
