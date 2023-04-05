@@ -10,12 +10,8 @@ light_proxy = 'http://10.140.17.109:6001'
 medium_proxy = 'http://10.140.17.109:6002'
 heavy_proxy = 'http://10.140.17.109:6003'
 
-# {name, id}
+# {name, id, isElastic, upper, lower}
 pods = []
-# {datetime, request}
-light_requests = []
-medium_requests = []
-heavy_requests = []
 
 cURL = pycurl.Curl()
 app = Flask(__name__)
@@ -41,7 +37,7 @@ def cloud_init():
             return jsonify({'response': 'failure',
                             'reason': 'error while initializing light pod'})
         else:
-            pods.append({'name':l_dict['name'], 'id':l_dict['id']})
+            pods.append({'name':l_dict['name'], 'id':l_dict['id'], 'isElastic':False, 'upper':None, 'lower':None})
     
     buffer = bytearray()
     print('Initializing medium pod')
@@ -56,7 +52,7 @@ def cloud_init():
             return jsonify({'response': 'failure',
                             'reason': 'error while initializing medium pod'})
         else:
-            pods.append({'name':l_dict1['name'], 'id':l_dict1['id']})
+            pods.append({'name':l_dict1['name'], 'id':l_dict1['id'], 'isElastic':False, 'upper':None, 'lower':None})
 
     buffer = bytearray()
     print('Initializing heavy pod')
@@ -71,7 +67,7 @@ def cloud_init():
             return jsonify({'response': 'failure',
                             'reason': 'error while initializing heavy pod'})
         else:
-            pods.append({'name':l_dict2['name'], 'id':l_dict2['id']})
+            pods.append({'name':l_dict2['name'], 'id':l_dict2['id'], 'isElastic':False, 'upper':None, 'lower':None})
             
     return jsonify({'response': 'success', 'pods':pods}) 
 
@@ -321,8 +317,38 @@ def cloud_elasticity_lower():
     pass
 
 @app.route('/cloud/elasticity/upper/<pod_name>/<value>')
-def cloud_elasticity_upper():
-    pass
+def cloud_elasticity_upper(pod_name, value):
+    found = False
+    for pod in pods:
+        if pod['name'] == pod_name:
+            found = True
+            # 1. check if elasticity enabled
+            if pod['isElastic']:
+                # 2. set threshold value in pods list
+                pod['upper'] = value
+            else:
+                return jsonify({'response': 'failure',
+                                'reason': 'elasticity is not enabled for pod: ' + str(pod_name)})
+    if found == False:
+        return jsonify({'response': 'failure',
+                        'reason': 'pod not found'})
+
+    # 3. tell EM new threshold +  to adjust nodes to fit threshold
+    cURL.setopt(cURL.URL, 'http://10.140.17.108:5000/cloudelastic/elasticity/upper/' + str(pod_name) + '/' + str(value))
+    buffer = bytearray()
+
+    cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
+    cURL.perform()
+
+    if cURL.getinfo(cURL.RESPONSE_CODE) == 200:
+        response_dictionary = json.loads(buffer.decode())
+        response = response_dictionary['response']
+        if response == 'success':
+            return jsonify({'response': 'success',
+                    'reason': 'upper threshold set to: ' + str(value)}) 
+    
+    return jsonify({'response': 'failure',
+                    'reason': 'Unknown'})
 
 @app.route('/cloud/elasticity/enable/<pod_name>/<lower>/<upper>')
 def cloud_elasticity_enable(pod_name, lower, upper):
