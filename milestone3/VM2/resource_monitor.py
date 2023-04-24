@@ -5,10 +5,10 @@ import datetime
 import pandas as pd
 import subprocess
 
-light_proxy = 'http://10.140.17.109:6001'
-medium_proxy = 'http://10.140.17.109:6002'
-heavy_proxy = 'http://10.140.17.109:6003'
-manager = 'http://10.140.17.108:5000'
+light_proxy = 'http://10.140.17.109:6002'
+medium_proxy = 'http://10.140.17.109:6003'
+heavy_proxy = 'http://10.140.17.109:6001'
+manager = 'http://10.140.17.108:6002'
 
 app = Flask(__name__)
 
@@ -27,7 +27,6 @@ def cloud_node_ls(pod_name):
     if pod_name == 'light_pod':
         response = requests.get(light_proxy + '/cloudproxy/nodes')
         response_json = response.json()
-        print(response_json)
         return response_json
     elif pod_name == 'medium_pod':
         response = requests.get(medium_proxy + '/cloudproxy/nodes')
@@ -81,6 +80,33 @@ def cloud_log_pod(pod_name):
     return parsed
 
 #------------------------HAPROXY LOGGING-------------------------
+
+#------------------------ELASTICITY LOGGING-------------------------
+
+@app.route('/cloudmonitor/resource_utilization')
+def cloud_util():
+    print('Request to get resource utilization for all pods')
+    response_json = {}
+    pod_responses = []
+
+    response = requests.get(light_proxy + '/cloudproxy/compute_usage')
+    response_json = response.json()
+    pod_responses.append({'pod_name':'light_pod', 'usage': response_json})
+    
+    response = requests.get(medium_proxy + '/cloudproxy/compute_usage')
+    response_json = response.json()
+    pod_responses.append({'pod_name':'medium_pod', 'usage': response_json})
+
+    response = requests.get(heavy_proxy + '/cloudproxy/compute_usage')
+    response_json = response.json()
+    pod_responses.append({'pod_name':'heavy_pod', 'usage': response_json})
+
+    print(pod_responses)
+
+    return jsonify(pod_responses)
+
+#------------------------ELASTICITY LOGGING-------------------------
+
     
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=True, host='0.0.0.0', port=6003)

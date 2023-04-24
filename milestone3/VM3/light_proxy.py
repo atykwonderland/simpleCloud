@@ -1,3 +1,4 @@
+import requests
 import docker
 from flask import Flask, jsonify, request
 import os
@@ -96,7 +97,7 @@ def cloud_node(name, pod_name):
                 return jsonify({'response': 'failure', 'result': result, 'node_status': 'not created', "name": str(name), 'pod_name': str(pod_name)})
         # make new node
         if result == 'unknown' and node_status == 'unknown':
-            n = client.containers.run(image = "alpine", command='/bin/sh', detach=True, tty=True, name=str(name), network=pod.name)
+            n = client.containers.run(image = "alpine", command='/bin/sh', detach=True, tty=True, name=str(name), network=pod_name)
             node_status = 'New'
             nodes.append(Node(name, n.id, node_status, None))
             result = 'node_added'
@@ -163,6 +164,7 @@ def launch():
             client.containers.run(image=img,
                                   detach=True,
                                   name=node.name,
+                                  network='light_pod',
                                   mem_limit='100m',
                                   cpu_quota=int(AVAIL_CPUS * 0.3 * 100000),
                                   cpu_period=100000,
@@ -184,22 +186,39 @@ def launch():
 
 @app.route('/cloudproxy/compute_usage')
 def compute_usage():
-    cpu_usage = 0
+    cpu_avg = 0
+    mem_avg = 0
     try:
-        containers_list = client.networks.get('light_pod').containers
+        networks_list = client.networks.list(names=['light_pod'])
+        ident = networks_list[0].id
+        network = client.networks.get(ident)
+        containers_list = network.containers
         num_containers = len(containers_list)
-        for container in containers_list:            
-            cpu_info = container.stats()
-            
-            cpu_delta = cpu_info['cpu_stats']['cpu_usage']['total_usage'] - cpu_info['precpu_stats']['cpu_usage']['total_usage']
-            system_cpu_delta = cpu_info['cpu_stats']['system_cpu_usage'] - cpu_info['precpu_stats']['system_cpu_usage']
-            number_cpus = len(cpu_info['cpu_stats']['cpu_usage']['percpu_usage'])
-            cpu_usage += ((cpu_delta / system_cpu_delta) * number_cpus * 100.0) / len(nodes)
+
+        for container in containers_list:
+            info = container.stats(stream=False)
+            cpu_info = info['cpu_stats']
+            prev_cpu_info = info['precpu_stats']
+            mem_info = info['memory_stats']
+
+            cpu_delta = float(cpu_info['cpu_usage']['total_usage']) - float(prev_cpu_info['cpu_usage']['total_usage'])
+            system_cpu_delta = float(cpu_info['system_cpu_usage']) - float(prev_cpu_info['system_cpu_usage'])
+            cpu_usage = float((cpu_delta / system_cpu_delta) * 100.0)
+            cpu_avg += cpu_usage
+
+            used_memory = float(mem_info['usage'])
+            available_memory = float(mem_info['limit'])
+            mem_usage = float((used_memory / available_memory) * 100.0)
+            mem_avg += mem_usage
+
+        if num_containers != 0:
+            cpu_avg = cpu_avg / num_containers
+            mem_avg = mem_avg / num_containers
             
     except:
-        return jsonify({'response': 'failure', 'value':None})                                         
+        return jsonify({'response': 'failure', 'reason': 'could not get pod'})                                         
 
-    return jsonify({'response':'success', 'value':cpu_usage})                                         
+    return jsonify({'response':'success', 'cpu_avg':cpu_avg, 'mem_avg': mem_avg})                                        
 
 #------------------------ELASTICITY-------------------------
 
@@ -216,4 +235,4 @@ def cloud_node_ls():
 #------------------------MONITORING-------------------------
 
 if __name__ == '__main__':
-    app.run(debug=True, host= '0.0.0.0', port=6001)
+    app.run(debug=True, host= '0.0.0.0', port=6002)

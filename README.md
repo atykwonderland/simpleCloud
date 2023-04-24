@@ -14,13 +14,15 @@ On comp598-user@winter2023-comp598-group03-02:
 * resource_manager.py
 * resource_monitor.py
 * cloud_dashboard.py
-* light_proxy.py
+* elastic_manager.py
+* request_load.py <- for testing different loads on the elastic manager
 
 On comp598-user@winter2023-comp598-group03-01:
 * cloud_toolset.py
-* medium_proxy.py
 
 On comp598-user@winter2023-comp598-group03-03:
+* light_proxy.py
+* medium_proxy.py
 * heavy_proxy.py
 
 ---
@@ -43,6 +45,10 @@ cloud rm {node_name} {pod_id}
 cloud launch {pod_id}
 cloud resume {pod_id}
 cloud pause {pod_id}
+cloud elasticity lower_threshold {pod_name} {value}
+cloud elasticity upper_threshold {pod_name} {value}
+cloud elasticity enable {pod_name} {lower_size} {upper_size}
+cloud elasticity disable {pod_name}
 ```
 
 ---

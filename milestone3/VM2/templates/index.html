@@ -60,7 +60,29 @@
 </tr>
   
 </table>
-  
+
+<table style="margin-left: 20px;">
+<!-- Table headers -->
+    <th>
+        <tr style="font-weight: bold;">    
+        <td>pod_name</td>
+        <td>cpu_usage</td>
+        <td>memory_usage</td>
+</tr>
+    </th>
+        
+<!-- For loop logic of jinja template -->
+{%for pod in usage%}
+    <!-- table rows -->
+    <tr>
+        <td>{{pod['pod_name']}}</td>
+        <td>{{pod['usage']['cpu_avg']}}</td>
+        <td>{{pod['usage']['mem_avg']}}</td>
+{%endfor%}
+    
+</tr>
+    
+</table>
   
 </body>
 </html>

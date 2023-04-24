@@ -4,13 +4,14 @@ import pycurl
 import json 
 import subprocess
 from io import BytesIO
-import datetime
+from datetime import datetime
 
-light_proxy = 'http://10.140.17.109:6001'
-medium_proxy = 'http://10.140.17.109:6002'
-heavy_proxy = 'http://10.140.17.109:6003'
+light_proxy = 'http://10.140.17.109:6002'
+medium_proxy = 'http://10.140.17.109:6003'
+heavy_proxy = 'http://10.140.17.109:6001'
+elastic_manager = 'http://10.140.17.108:6004'
 
-# {name, id, isElastic, upper, lower}
+# {name, id, isElastic}
 pods = []
 
 cURL = pycurl.Curl()
@@ -37,7 +38,7 @@ def cloud_init():
             return jsonify({'response': 'failure',
                             'reason': 'error while initializing light pod'})
         else:
-            pods.append({'name':l_dict['name'], 'id':l_dict['id'], 'isElastic':False, 'upper':None, 'lower':None})
+            pods.append({'name':l_dict['name'], 'id':l_dict['id'], 'isElastic':False})
     
     buffer = bytearray()
     print('Initializing medium pod')
@@ -52,7 +53,7 @@ def cloud_init():
             return jsonify({'response': 'failure',
                             'reason': 'error while initializing medium pod'})
         else:
-            pods.append({'name':l_dict1['name'], 'id':l_dict1['id'], 'isElastic':False, 'upper':None, 'lower':None})
+            pods.append({'name':l_dict1['name'], 'id':l_dict1['id'], 'isElastic':False})
 
     buffer = bytearray()
     print('Initializing heavy pod')
@@ -67,22 +68,23 @@ def cloud_init():
             return jsonify({'response': 'failure',
                             'reason': 'error while initializing heavy pod'})
         else:
-            pods.append({'name':l_dict2['name'], 'id':l_dict2['id'], 'isElastic':False, 'upper':None, 'lower':None})
+            pods.append({'name':l_dict2['name'], 'id':l_dict2['id'], 'isElastic':False})
             
     return jsonify({'response': 'success', 'pods':pods}) 
 
-@app.route('/cloud/node/register/<name>/<pod_id>')
-def register_node(name, pod_id):
+@app.route('/cloud/node/register/<name>/<pod_id>', defaults={'fromElastic': False})
+@app.route('/cloud/node/register/<name>/<pod_id>/<fromElastic>')
+def register_node(name, pod_id, fromElastic):
     print('Request to register new node: ' + str(name) + ' in pod ' + str(pod_id))
     found = False
     pod_name = ""
     for pod in pods:
         if pod['id'] == pod_id:
             pod_name = pod['name']
-            if pod['isElastic'] == True:
-                return jsonify({'response': 'failure',
-                                'reason': 'pos is in elastic mode'})
             found = True
+            if pod['isElastic'] == True and not fromElastic:
+                return jsonify({'response': 'failure',
+                                'reason': 'pod is in elastic mode'})
     if found == False:
         return jsonify({'response': 'failure',
                         'reason': 'pod not found'})
@@ -164,16 +166,17 @@ def remove_node(name, pod_id):
     return jsonify({'response': 'failure',
                     'reason': 'unknown'})
 
-@app.route('/cloud/pod/launch/<pod_id>')
-def launch(pod_id):
+@app.route('/cloud/pod/launch/<pod_id>', defaults={'fromElastic': False})
+@app.route('/cloud/pod/launch/<pod_id>/<fromElastic>')
+def launch(pod_id, fromElastic):
     print('Request to launch pod: '  + str(pod_id))
     pod_name = ""
     for pod in pods:
         if pod['id'] == pod_id: 
             pod_name = pod['name']
-            if pod['isElastic'] == True:
+            if pod['isElastic'] == True and not fromElastic:
                 return jsonify({'response': 'failure',
-                                'reason': 'pos is in elastic mode'})
+                                'reason': 'pod is in elastic mode'})
     
     if pod_name == "light_pod":
         pod_URL = light_proxy
@@ -295,8 +298,6 @@ def cloud_pause(pod_id):
     
     return jsonify({'response': 'success',
                     'reason': 'successfully paused pod ' + pod_name}) 
-        
-
 
 #------------------------TOOLSET-------------------------
 
@@ -310,6 +311,86 @@ def cloud_pod_ls():
 #------------------------MONITORING-------------------------
 
 #------------------------ELASTICITY-------------------------
+
+@app.route('/cloud/elasticity/enable/<pod_name>/<lower>/<upper>')
+def cloud_elasticity_enable(pod_name, lower, upper):
+    print('Request to enable elasticity for pod: '  + str(pod_name))
+    index = -1
+    for i, pod in enumerate(pods):
+        if pod['name'] == pod_name: 
+            index = i
+            if pod['isElastic'] == True:
+                return jsonify({'response': 'failure',
+                                'reason': 'elasticity already enabled for pod ' + pod_name})
+    if index == -1:
+        return jsonify({'response': 'failure',
+                        'reason': 'pod not found'})
+    
+    if pod_name == "light_pod":
+        if int(upper) > 20:
+            return jsonify({'response': 'failure',
+                            'reason': 'upper bound greater than 20'})
+    elif pod_name == "medium_pod":
+        if int(upper) > 15:
+            return jsonify({'response': 'failure',
+                            'reason': 'upper bound greater than 15'})
+    elif pod_name == "heavy_pod":
+        if int(upper) > 10:
+            return jsonify({'response': 'failure',
+                            'reason': 'upper bound greater than 10'})
+    else:
+        return jsonify({'response': 'failure',
+                        'reason': 'unknown pod'})
+
+    cURL.setopt(cURL.URL, elastic_manager + '/cloudelastic/elasticity/enable/' + str(pod_name) + '/' + str(lower) + '/' + str(upper))
+    buffer = bytearray()
+    cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
+    cURL.perform()
+
+    if cURL.getinfo(cURL.RESPONSE_CODE) == 200:
+        response_dictionary = json.loads(buffer.decode())
+        response = response_dictionary['response']
+        if response == 'success':
+            pods[index]['isElastic'] = True 
+            return jsonify({'response': 'success',
+                            'reason': 'successfully enabled elasticity for pod ' + pod_name})
+        else:
+            return jsonify({'response': 'failure',
+                            'reason': 'elastic manager failure'})    
+    
+    return jsonify({'response': 'failure',
+                    'reason': 'unknown'})
+   
+@app.route('/cloud/elasticity/disable/<pod_name>')
+def cloud_elasticity_disable(pod_name):
+    print('Request to disable elasticity for pod: '  + str(pod_name))
+    index = -1
+    for i, pod in enumerate(pods):
+        if pod['name'] == pod_name: 
+            index = i
+            pod['isElastic'] = False
+    if index == -1:
+        return jsonify({'response': 'failure',
+                        'reason': 'pod not found'})
+
+    cURL.setopt(cURL.URL,  elastic_manager + '/cloudelastic/elasticity/disable/' + str(pod_name))
+    buffer = bytearray()
+    cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
+    cURL.perform()
+
+    if cURL.getinfo(cURL.RESPONSE_CODE) == 200:
+        response_dictionary = json.loads(buffer.decode())
+        response = response_dictionary['response']
+        if response == 'success':
+            pods[index]['isElastic'] = False 
+            return jsonify({'response': 'success',
+                            'reason': 'successfully disabled elasticity for pod ' + pod_name})
+        else:
+            return jsonify({'response': 'failure',
+                            'reason': 'elastic manager failure'})
+
+    return jsonify({'response': 'failure',
+                    'reason': 'unknown'})
 
 @app.route('/cloud/elasticity/lower/<pod_name>/<value>')
 def cloud_elasticity_lower(pod_name, value):
@@ -329,7 +410,7 @@ def cloud_elasticity_lower(pod_name, value):
                         'reason': 'pod not found'})
 
     # 3. tell EM new threshold +  to adjust nodes to fit threshold
-    cURL.setopt(cURL.URL, 'http://10.140.17.108:5000/cloudelastic/elasticity/lower/' + str(pod_name) + '/' + str(value))
+    cURL.setopt(cURL.URL, elastic_manager + '/cloudelastic/elasticity/lower/' + str(pod_name) + '/' + str(value))
     buffer = bytearray()
 
     cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
@@ -363,7 +444,7 @@ def cloud_elasticity_upper(pod_name, value):
                         'reason': 'pod not found'})
 
     # 3. tell EM new threshold +  to adjust nodes to fit threshold
-    cURL.setopt(cURL.URL, 'http://10.140.17.108:5000/cloudelastic/elasticity/upper/' + str(pod_name) + '/' + str(value))
+    cURL.setopt(cURL.URL, elastic_manager + '/cloudelastic/elasticity/upper/' + str(pod_name) + '/' + str(value))
     buffer = bytearray()
 
     cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
@@ -379,51 +460,7 @@ def cloud_elasticity_upper(pod_name, value):
     return jsonify({'response': 'failure',
                     'reason': 'Unknown'})
 
-@app.route('/cloud/elasticity/enable/<pod_name>/<lower>/<upper>')
-def cloud_elasticity_enable(pod_name, lower, upper):
-    print('Request to enable elasticity for pod: '  + str(pod_name))
-    found = False
-    for pod in pods:
-        if pod['name'] == pod_name: 
-            found = True
-            if pod['isElastic'] == true:
-                return jsonify({'response': 'failure',
-                                    'reason': 'elasticity already enabled for pod ' + pod_name})
-            cURL.setopt(cURL.URL,  pod_URL + '/cloudelastic/elasticity/enable/' + pod_name + '/' + str(lower) + '/' + str(upper))
-            buffer = bytearray()
-            cURL.setopt(cURL.WRITEFUNCTION, buffer.extend)
-            cURL.perform()
-    
-            if cURL.getinfo(cURL.RESPONSE_CODE) == 200:
-                response_dictionary = json.loads(buffer.decode())
-                response = response_dictionary['response']
-                if response == 'success':
-                    pod['isElastic'] = true 
-                    return jsonify({'response': 'success',
-                                    'reason': 'successfully enabled elasticity for pod ' + pod_name})
-                else:
-                    return jsonify({'response': 'failure',
-                                    'reason': 'elastic manager failure'})    
-            if found == False:
-                return jsonify({'response': 'failure',
-                                'reason': 'pod not found'})
-    return jsonify({'response': 'failure',
-                    'reason': 'unknown'})
-   
-
-@app.route('/cloud/elasticity/disable/<pod_name>')
-def cloud_elasticity_disable(pod_name):
-    print('Request to disable elasticity for pod: '  + str(pod_name))
-    for pod in pods:
-        if pod['name'] == pod_name:
-            pod['isElastic'] = flase
-            return jsonify({'response': 'success',
-                    'reason': 'successfully disabled elasticity for pod ' + pod_name})
-    return jsonify({'response': 'failure',
-                        'reason': 'pod not found'})
-
 #------------------------ELASTICITY-------------------------
-
 
 #------------------------UNSUPPORTED-------------------------
 
@@ -442,4 +479,4 @@ def cloud_pod_rm(name):
 #------------------------UNSUPPORTED-------------------------
 
 if __name__ == '__main__':
-    app.run(debug=True, host= '0.0.0.0', port=5000)
+    app.run(debug=True, host= '0.0.0.0', port=6002)

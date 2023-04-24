@@ -101,11 +101,45 @@ def cloud_log_pod(url, command):
     else:
         print('Error: incorrect number of arguments') 
 
+#------------------------ELASTICITY-------------------------
+
+def cloud_elastic_upper(url, command):
+    command_list = command.split()
+    if len(command_list) == 5:
+        cURL.setopt(cURL.URL, url + '/cloud/elasticity/upper/' + command_list[3] + '/' + command_list[4])
+        cURL.perform()
+    else:
+        print('Error: incorrect number of arguments')
+
+def cloud_elastic_lower(url, command):
+    command_list = command.split()
+    if len(command_list) == 5:
+        cURL.setopt(cURL.URL, url + '/cloud/elasticity/lower/' + command_list[3] + '/' + command_list[4])
+        cURL.perform()
+    else:
+        print('Error: incorrect number of arguments')
+
+def cloud_elastic_enable(url, command):
+    command_list = command.split()
+    if len(command_list) == 6:
+        cURL.setopt(cURL.URL, url + '/cloud/elasticity/enable/' + command_list[3] + '/' + command_list[4] + '/' + command_list[5])
+        cURL.perform()
+    else:
+        print('Error: incorrect number of arguments')
+
+def cloud_elastic_disable(url, command):
+    command_list = command.split()
+    if len(command_list) == 4:
+        cURL.setopt(cURL.URL, url + '/cloud/elasticity/disable/' + command_list[3])
+        cURL.perform()
+    else:
+        print('Error: incorrect number of arguments')
+
 #-------------------------------------------------
 
 def main():
-    rmanager_url = 'http://10.140.17.108:5000'
-    rmonitor_url = 'http://10.140.17.108:5001'    
+    rmanager_url = 'http://10.140.17.108:6002'
+    rmonitor_url = 'http://10.140.17.108:6003'    
     while (1):
         command = input('$ ')
         #TOOLSET
@@ -134,6 +168,15 @@ def main():
             cloud_log_request(rmonitor_url, command)
         elif command.startswith('cloud log pod'):
             cloud_log_pod(rmonitor_url, command)
+        #ELASTIC
+        elif command.startswith('cloud elasticity lower_threshold'):
+            cloud_elastic_lower(rmanager_url, command)
+        elif command.startswith('cloud elasticity upper_threshold'):
+            cloud_elastic_upper(rmanager_url, command)
+        elif command.startswith('cloud elasticity enable'):
+            cloud_elastic_enable(rmanager_url, command)
+        elif command.startswith('cloud elasticity disable'):
+            cloud_elastic_disable(rmanager_url, command)
 
 if __name__ == '__main__':
     main()
