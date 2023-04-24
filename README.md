@@ -1,10 +1,20 @@
-# COMP598
+# COMP598 - McGill
+## Simple Elastic Cloud with Load Balancer
+A basic cloud management system that will manage and monitor a cluster of machines and use them to run jobs.
+Nodes and Pods are depicted by docker containers and networks, respectively. 
+
 ## Group 3:
-Alice Kang 260827823
+Alice Kang,
+Hana Zhang,
+Joshua Roccamo
 
-Hana Zhang 260887780
+---
 
-Joshua Roccamo 260669999
+## Dependencies:
+* docker
+* haproxy
+* nginx
+* ...
 
 ---
 
