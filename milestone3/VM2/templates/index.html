@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+  
+<html>
+<head>
+    <title>Cloud Monitoring Dashboard</title>
+    <meta http-equiv="refresh" content="10">
+</head>
+  
+<!-- Adding some style to table (OPTIONAL) -->
+<style type="text/css">
+    th:tr{
+        color: blue;
+  
+    }
+    tr:nth-of-type(2n){
+        border: 1px solid black;
+        background-color: rgba(150, 150, 150, 0.5);
+    }
+    td{
+        padding: 8px 8px;
+        border: 1px solid black;
+    }
+</style>
+  
+<body>
+  
+<table style="margin-left: 20px;">
+<!-- Table headers -->
+    <th>
+        <tr style="font-weight: bold;">    
+        <td>pxname</td>
+        <td>svname</td>
+        <td>status</td>
+        <td>req_rate</td>
+        <td>req_rate_max</td>
+        <td>qtime</td>
+        <td>ctime</td>
+        <td>rtime</td>
+        <td>addr</td>
+        <td>algo</td>
+</tr>
+    </th>
+      
+<!-- For loop logic of jinja template -->
+{%for log in logs%}
+    <!-- table rows -->
+    <tr>
+        <td>{{log['# pxname']}}</td>
+        <td>{{log['svname']}}</td>
+        <td>{{log['status']}}</td>
+        <td>{{log['req_rate']}}</td>
+        <td>{{log['req_rate_max']}}</td>
+        <td>{{log['qtime']}}</td>
+        <td>{{log['ctime']}}</td>
+        <td>{{log['rtime']}}</td>
+        <td>{{log['addr']}}</td>
+        <td>{{log['algo']}}</td>
+{%endfor%}
+  
+</tr>
+  
+</table>
+
+<table style="margin-left: 20px;">
+<!-- Table headers -->
+    <th>
+        <tr style="font-weight: bold;">    
+        <td>pod_name</td>
+        <td>cpu_usage</td>
+        <td>memory_usage</td>
+</tr>
+    </th>
+        
+<!-- For loop logic of jinja template -->
+{%for pod in usage%}
+    <!-- table rows -->
+    <tr>
+        <td>{{pod['pod_name']}}</td>
+        <td>{{pod['usage']['cpu_avg']}}</td>
+        <td>{{pod['usage']['mem_avg']}}</td>
+{%endfor%}
+    
+</tr>
+    
+</table>
+  
+</body>
+</html>

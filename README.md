@@ -8,25 +8,66 @@ Joshua Roccamo 260669999
 
 ---
 
-## How to Run:
+## Files to start when starting the cloud:
 
-To run the scripts on each server (to be set up as daemons later for RP + RM), in the home directory of the comp598-user do:
-- RP: `python3 proxy.py` and `python3 job_dispatch.py`
-- RM: `python3 resource_manager.py` and `python3 resource_monitor.py`
-- Cloud-Client: `python3 cloud_toolset.py http://winter2023-comp598-group03-02.cs.mcgill.ca:5000 http://winter2023-comp598-group03-02.cs.mcgill.ca:7000`
+On comp598-user@winter2023-comp598-group03-02:
+* resource_manager.py
+* resource_monitor.py
+* cloud_dashboard.py
+* elastic_manager.py
+* request_load.py <- for testing different loads on the elastic manager
 
-Note: the job_dispatch.py file runs forever with sleeps in the middle, consistently checking for any jobs to run in the queue and any available nodes.
+On comp598-user@winter2023-comp598-group03-01:
+* cloud_toolset.py
 
-The monitoring dashboard needs to be run with:
-- RM: `python3 cloud_dashboard.py`
-It can be accessed at:
-http://winter2023-comp598-group03-02.cs.mcgill.ca:80/cloudmonitor/dashboard/
+On comp598-user@winter2023-comp598-group03-03:
+* light_proxy.py
+* medium_proxy.py
+* heavy_proxy.py
+
+---
+
+## After running the above files:
+* use the cloud_toolset commands to run the toolset (node/pod management) and monitoring commands
+* access the cloud dashboard by opening this link in a web browser: http://127.0.0.1:3000/cloudmonitor/dashboard
+* to see the stats live without going to the dashboard: `watch 'echo "show stat" | sudo socat stdio /run/haproxy/admin.sock | cut -d "," -f 1-2,18,47-48,59-61,74,77 | column -s, -t'`
 
 ---
 
-## Servers:
-- RP: winter2023-comp598-group03-01.cs.mcgill.ca
-- RM: winter2023-comp598-group03-02.cs.mcgill.ca
-- Cloud-Client: winter2023-comp598-group03-03.cs.mcgill.ca
+## Supported Toolset Commands
+
+```
+cloud init
+cloud pod register {pod_name}
+cloud pod rm {pod_name}
+cloud register {node_name} {pod_id}
+cloud rm {node_name} {pod_id}
+cloud launch {pod_id}
+cloud resume {pod_id}
+cloud pause {pod_id}
+cloud elasticity lower_threshold {pod_name} {value}
+cloud elasticity upper_threshold {pod_name} {value}
+cloud elasticity enable {pod_name} {lower_size} {upper_size}
+cloud elasticity disable {pod_name}
+```
 
 ---
+
+## Supported Monitoring Commands
+
+```
+cloud pod ls
+cloud node ls {pod_id}
+cloud log request
+cloud log pod {pod_name}
+```
+
+---
+
+## Supported End User Requests
+
+```
+curl http://10.140.17.108:5001/light/app
+curl http://10.140.17.108:5002/medium/app
+curl http://10.140.17.108:5003/heavy/app
+```

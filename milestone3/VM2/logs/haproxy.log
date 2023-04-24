@@ -1,0 +1,10 @@
+# pxname,svname,status,req_rate,req_rate_max,qtime,ctime,rtime,addr,algo
+http-in,FRONTEND,OPEN,0,74,,,,,
+light-servers,one,no check,,,0,1,2,10.140.17.109:7001,
+light-servers,two,no check,,,0,0,2,10.140.17.109:7002,
+light-servers,BACKEND,UP,,,0,4,1,,roundrobin
+medium-servers,node1,no check,,,0,0,10016,10.140.17.109:7021,
+medium-servers,BACKEND,UP,,,0,1,95,,roundrobin
+heavy-servers,node,no check,,,0,0,100002,10.140.17.109:7036,
+heavy-servers,BACKEND,UP,,,0,0,807,,roundrobin
+
